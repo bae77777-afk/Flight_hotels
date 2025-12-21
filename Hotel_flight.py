@@ -102,6 +102,9 @@ def search_flights_for_date(
             seat=seat,
             passengers=passengers,
             fetch_mode="fallback",
+            market="KR",
+            locale="ko-KR",
+            currency="KRW",
         )
     except Exception:
         return None
