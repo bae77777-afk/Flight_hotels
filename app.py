@@ -435,6 +435,17 @@ def index():
     error = None
 
     combined_total = None
+
+    # 항공 통화 추정 (price_raw에 $/₩ 등이 있으면 간단히 추정)
+    flight_currency = "USD" if ("$" in (best_flight.price_raw or "")) else None
+    
+    hotel_currency = combo_hotel.currency if combo_hotel else None
+    
+    if flight_currency and hotel_currency and flight_currency == hotel_currency:
+        combined_total = float(best_flight.price_value) + float(combo_hotel.total_price)
+    else:
+        combined_total = None
+
     combo_hotel = None
 
     if request.method == "POST":
