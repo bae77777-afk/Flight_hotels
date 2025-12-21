@@ -210,20 +210,49 @@ def search_hotels_for_dates(
     resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=30)
     resp.raise_for_status()
 
+    
     data = resp.json()
+    
     hotels_raw = data.get("data") or []
+    
+    # ✅ 여기 추가: 호텔 메타 맵
+    hotels_meta = data.get("hotels") or []
+    hotel_meta_map = {h.get("id"): h for h in hotels_meta if h.get("id")}
+    
     rows: List[HotelOption] = []
-
-    for hotel_obj in hotels_raw:
+    
+    for idx, hotel_obj in enumerate(hotels_raw, start=1):
         hotel_id = hotel_obj.get("hotelId") or ""
-
-        # LiteAPI는 includeHotelData=True일 때 hotel 객체가 포함될 수 있음
+    
+        # 1) 기존 방식 (혹시 들어오면 사용)
         hotel_info = hotel_obj.get("hotel") or {}
-        name = hotel_info.get("name") or hotel_info.get("hotelName") or ""
+    
+        # 2) ✅ 없으면 meta_map에서 보강
+        if (not hotel_info) and hotel_id in hotel_meta_map:
+            hotel_info = hotel_meta_map[hotel_id] or {}
+    
+        # ✅ LiteAPI 메타 키가 rating/주소 문자열 등으로 올 수도 있어서 유연하게 처리
+        name = (
+            hotel_info.get("name")
+            or hotel_info.get("hotelName")
+            or hotel_obj.get("hotelName")
+            or ""
+        )
+    
         star = hotel_info.get("starRating")
+        if star is None:
+            star = hotel_info.get("rating")  # some responses use rating
+    
+        address = ""
+        addr = hotel_info.get("address")
+        if isinstance(addr, dict):
+            address = addr.get("line1") or addr.get("city") or ""
+        elif isinstance(addr, str):
+            address = addr
+    
+        # 이하 roomTypes/price/refundable 파싱은 기존 그대로
 
-        address_info = hotel_info.get("address") or {}
-        address = address_info.get("line1") or address_info.get("city") or ""
+  
 
         room_types = hotel_obj.get("roomTypes") or []
         if not room_types:
