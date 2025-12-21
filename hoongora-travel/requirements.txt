@@ -1,4 +1,0 @@
-flask>=2.2
-requests>=2.31
-gunicorn>=21.2
-fast-flights
