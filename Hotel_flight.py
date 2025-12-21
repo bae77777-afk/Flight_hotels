@@ -102,9 +102,7 @@ def search_flights_for_date(
             seat=seat,
             passengers=passengers,
             fetch_mode="fallback",
-            market="KR",
-            locale="ko-KR",
-            currency="KRW",
+            
         )
     except Exception:
         return None
@@ -210,8 +208,14 @@ def search_hotels_for_dates(
         "X-API-Key": LITEAPI_API_KEY,
     }
 
-    resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=30)
+ try:
+    # connect 10초, read 60초 (상황에 맞게 조절)
+    resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=(10, 60))
     resp.raise_for_status()
+except requests.exceptions.Timeout:
+    return []  # 또는 "타임아웃" 표시용 값 반환
+except requests.exceptions.RequestException as e:
+    return []
 
     
     data = resp.json()
