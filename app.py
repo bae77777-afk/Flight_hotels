@@ -23,11 +23,17 @@ LITEAPI_URL = "https://api.liteapi.travel/v3.0/hotels/rates"
 
 
 def _require_access_key():
-    """If ACCESS_KEY is set, require ?key=... on all requests."""
     if not ACCESS_KEY:
         return
+
+    # ✅ 첫 화면(GET)은 허용
+    if request.method == "GET":
+        return
+
+    # POST만 보호
     if request.args.get("key") != ACCESS_KEY:
         abort(403)
+
 
 
 @app.before_request
@@ -502,64 +508,64 @@ def index():
                 )
 
             elif mode == "flight_hotel_month":
-            best_flight = find_cheapest_flight_in_month(
-                year=year,
-                month=month,
-                origin=origin,
-                dest=dest,
-                trip=trip,
-                stay_nights=nights,
-                adults=flight_adults,
-                seat=seat,
-            )
-        
-            # ✅ 항공 KRW 환산(항상 best_flight 직후)
-            flight_price_krw = None
-            if best_flight:
-                raw = getattr(best_flight, "price_raw", "") or ""
-                if "$" in raw or getattr(best_flight, "currency", "") == "USD":
-                    try:
-                        flight_price_krw = int(float(best_flight.price_value) * USD_TO_KRW)
-                    except Exception:
-                        flight_price_krw = None
-                else:
-                    try:
-                        flight_price_krw = int(float(best_flight.price_value))
-                    except Exception:
-                        flight_price_krw = None
-        
-            fh_hotels = []
-            combined_total = None
-        
-            if best_flight:
-                ci = best_flight.depart_date
-                if best_flight.return_date:
-                    co = best_flight.return_date
-                else:
-                    co = ci + timedelta(days=nights)
-        
-                fh_hotels = search_hotels_for_dates(
-                    checkin=ci,
-                    checkout=co,
-                    city_name=city,
-                    country_code=country,
-                    min_star=min_stars,
-                    max_star=max_stars,
-                    limit=limit,
-                    currency=currency,      # 호텔 통화는 이미 KRW로 주는 게 보통
-                    nationality=guest_nat,
+                best_flight = find_cheapest_flight_in_month(
+                    year=year,
+                    month=month,
+                    origin=origin,
+                    dest=dest,
+                    trip=trip,
+                    stay_nights=nights,
+                    adults=flight_adults,
+                    seat=seat,
                 )
-        
-                if fh_hotels:
-                    fh_hotels = fh_hotels[:fh_top_n]
-                    combo_hotel = fh_hotels[0]
-        
-                    # ✅ 합산은 KRW 기준으로만
-                    if flight_price_krw is not None:
+            
+                # ✅ 항공 KRW 환산(항상 best_flight 직후)
+                flight_price_krw = None
+                if best_flight:
+                    raw = getattr(best_flight, "price_raw", "") or ""
+                    if "$" in raw or getattr(best_flight, "currency", "") == "USD":
                         try:
-                            combined_total = int(flight_price_krw) + int(combo_hotel.total_price)
+                            flight_price_krw = int(float(best_flight.price_value) * USD_TO_KRW)
                         except Exception:
-                            combined_total = None
+                            flight_price_krw = None
+                    else:
+                        try:
+                            flight_price_krw = int(float(best_flight.price_value))
+                        except Exception:
+                            flight_price_krw = None
+            
+                fh_hotels = []
+                combined_total = None
+            
+                if best_flight:
+                    ci = best_flight.depart_date
+                    if best_flight.return_date:
+                        co = best_flight.return_date
+                    else:
+                        co = ci + timedelta(days=nights)
+            
+                    fh_hotels = search_hotels_for_dates(
+                        checkin=ci,
+                        checkout=co,
+                        city_name=city,
+                        country_code=country,
+                        min_star=min_stars,
+                        max_star=max_stars,
+                        limit=limit,
+                        currency=currency,      # 호텔 통화는 이미 KRW로 주는 게 보통
+                        nationality=guest_nat,
+                    )
+            
+                    if fh_hotels:
+                        fh_hotels = fh_hotels[:fh_top_n]
+                        combo_hotel = fh_hotels[0]
+            
+                        # ✅ 합산은 KRW 기준으로만
+                        if flight_price_krw is not None:
+                            try:
+                                combined_total = int(flight_price_krw) + int(combo_hotel.total_price)
+                            except Exception:
+                                combined_total = None
 
 
     return render_template_string(
