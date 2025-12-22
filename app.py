@@ -30,8 +30,13 @@ def _require_access_key():
     if request.method == "GET":
         return
 
-    # POST만 보호
-    if request.args.get("key") != ACCESS_KEY:
+    # POST만 보호 (query/form/header 모두 허용)
+    provided = (
+        request.args.get("key")
+        or request.form.get("key")
+        or request.headers.get("X-Access-Key")
+    )
+    if provided != ACCESS_KEY:
         abort(403)
 
 
@@ -114,7 +119,12 @@ def build_rows_from_rates(resp_json: dict, top_n: int = 10) -> List[Dict]:
 
         def get_offer_amount(rt: dict) -> float:
             offer = rt.get("offerRetailRate") or {}
-            return offer.get("amount", float("inf"))
+            amount = offer.get("amount", None)
+            # LiteAPI 응답에서 amount가 None/문자열로 올 수 있어 방어
+            try:
+                return float(amount)
+            except Exception:
+                return float("inf")
 
         best_room = min(room_types, key=get_offer_amount)
         offer = best_room.get("offerRetailRate") or {}
@@ -244,6 +254,10 @@ TEMPLATE = """
 <body>
   <h1>항공 + 호텔 최저가 웹툴</h1>
   <form method="post">
+    {# ACCESS_KEY를 쓰는 경우, GET 쿼리스트링의 key를 POST에도 유지 #}
+    {% if current_key %}
+      <input type="hidden" name="key" value="{{ current_key }}">
+    {% endif %}
     <fieldset>
       <legend>검색 모드</legend>
       <div class="mode-select">
@@ -367,6 +381,9 @@ TEMPLATE = """
       {% endif %}
       <li>항공사: {{ best_flight.airline }}</li>
       <li>가격: {{ best_flight.price_raw }} (추출값: {{ best_flight.price_value|round(0) }})</li>
+      {% if flight_price_krw %}
+        <li>KRW 환산(대략): {{ flight_price_krw }}</li>
+      {% endif %}
     </ul>
 
     {% if fh_hotels %}
@@ -391,10 +408,10 @@ TEMPLATE = """
       {% if combined_total and combo_hotel %}
         <h3>③ 항공 + 호텔 합산 최저가</h3>
         <p>
-          항공 (약 {{ best_flight.price_value|round(0) }}) +
+          항공 (KRW 환산 약 {{ flight_price_krw|default(best_flight.price_value|round(0)) }}) +
           호텔 “{{ combo_hotel.name }}” ({{ combo_hotel.total_price }}) =
           <strong>{{ combined_total|round(0) }}</strong>
-          {{ combo_hotel.currency }} (동일 통화 기준 추정)
+          KRW
         </p>
       {% endif %}
 
@@ -446,33 +463,56 @@ def index():
     combined_total = None
     combo_hotel = None
 
+    # ACCESS_KEY가 켜진 경우를 위해 key를 템플릿에 넘겨 폼 POST에 유지
+    current_key = request.args.get("key", "")
+
+    def _to_int(v, default: int) -> int:
+        try:
+            return int(v)
+        except Exception:
+            return default
+
     if request.method == "POST":
         form = request.form
         mode = form.get("mode", mode)
 
         city = form.get("city", city)
         country = form.get("country", country)
-        adults = int(form.get("adults", adults))
-        min_stars = int(form.get("min_stars", min_stars))
-        max_stars = int(form.get("max_stars", max_stars))
+        adults = _to_int(form.get("adults", adults), adults)
+        min_stars = _to_int(form.get("min_stars", min_stars), min_stars)
+        max_stars = _to_int(form.get("max_stars", max_stars), max_stars)
         currency = form.get("currency", currency)
         guest_nat = form.get("guest_nat", guest_nat)
 
         checkin = form.get("checkin", checkin)
         checkout = form.get("checkout", checkout)
-        top_n = int(form.get("top_n", top_n))
-        limit = int(form.get("limit", limit))
+        top_n = _to_int(form.get("top_n", top_n), top_n)
+        limit = _to_int(form.get("limit", limit), limit)
 
-        year = int(form.get("year", year))
-        month = int(form.get("month", month))
-        nights = int(form.get("nights", nights))
+        year = _to_int(form.get("year", year), year)
+        month = _to_int(form.get("month", month), month)
+        nights = _to_int(form.get("nights", nights), nights)
 
         origin = form.get("origin", origin)
         dest = form.get("dest", dest)
         trip = form.get("trip", trip)
         seat = form.get("seat", seat)
-        flight_adults = int(form.get("flight_adults", flight_adults))
-        fh_top_n = int(form.get("fh_top_n", fh_top_n))
+        flight_adults = _to_int(form.get("flight_adults", flight_adults), flight_adults)
+        fh_top_n = _to_int(form.get("fh_top_n", fh_top_n), fh_top_n)
+
+        # 간단한 값 범위 방어
+        if month < 1:
+            month = 1
+        if month > 12:
+            month = 12
+        if nights < 1:
+            nights = 1
+        if top_n < 1:
+            top_n = 1
+        if limit < 1:
+            limit = 1
+
+        flight_price_krw = None
 
         try:
             if mode == "hotel_period":
@@ -520,7 +560,6 @@ def index():
                 )
             
                 # ✅ 항공 KRW 환산(항상 best_flight 직후)
-                flight_price_krw = None
                 if best_flight:
                     raw = getattr(best_flight, "price_raw", "") or ""
                     if "$" in raw or getattr(best_flight, "currency", "") == "USD":
@@ -567,9 +606,16 @@ def index():
                             except Exception:
                                 combined_total = None
 
+        except Exception as e:
+            # Render에서는 에러 메시지라도 화면에 보여주는 게 디버깅에 도움이 됨
+            error = f"{type(e).__name__}: {e}"
 
+    else:
+        # GET에서는 아직 항공권 검색을 돌리지 않고(초기 로딩 빨라짐) 화면만 띄움
+        flight_price_krw = None
     return render_template_string(
         TEMPLATE,
+        current_key=current_key,
         mode=mode,
         city=city,
         country=country,
@@ -597,6 +643,7 @@ def index():
         best_flight=best_flight,
         fh_hotels=fh_hotels,
         error=error,
+        flight_price_krw=flight_price_krw,
         combined_total=combined_total,
         combo_hotel=combo_hotel,
     )
@@ -604,4 +651,6 @@ def index():
 
 if __name__ == "__main__":
     # Render 등 배포환경에서는 gunicorn이 실행함
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=True)
+    debug = os.environ.get("FLASK_DEBUG") == "1"
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=debug)
+
