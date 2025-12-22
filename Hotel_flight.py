@@ -66,105 +66,6 @@ def parse_price_to_float(price) -> float:
 # ==========================
 
 
-def search_flights_for_date(
-    depart: date,
-    origin: str,
-    dest: str,
-    trip: str = "one-way",
-    return_date: Optional[date] = None,
-    adults: int = 1,
-    seat: str = "economy",
-) -> Optional[FlightOption]:
-    """Return the cheapest flight for the given date(s) using fast_flights."""
-
-    date_str = depart.isoformat()
-    return_date_str = return_date.isoformat() if return_date else None
-
-    if trip == "round-trip" and return_date_str:
-        flight_data = [
-            FlightData(date=date_str, from_airport=origin, to_airport=dest),
-            FlightData(date=return_date_str, from_airport=dest, to_airport=origin),
-        ]
-    else:
-        flight_data = [FlightData(date=date_str, from_airport=origin, to_airport=dest)]
-
-    passengers = Passengers(
-        adults=adults,
-        children=0,
-        infants_in_seat=0,
-        infants_on_lap=0,
-    )
-
-    try:
-        result: Result = get_flights(
-            flight_data=flight_data,
-            trip="round-trip" if trip == "round-trip" else "one-way",
-            seat=seat,
-            passengers=passengers,
-            fetch_mode="fallback",
-        )
-    except Exception:
-        return None
-
-    flights = getattr(result, "flights", None)
-    if not flights:
-        return None
-
-    cheapest = min(flights, key=lambda f: parse_price_to_float(getattr(f, "price", None)))
-    price_raw = getattr(cheapest, "price", "")
-    airline = getattr(cheapest, "name", "") or getattr(cheapest, "airline", "")
-
-    return FlightOption(
-        depart_date=depart,
-        return_date=return_date,
-        price_value=parse_price_to_float(price_raw),
-        price_raw=str(price_raw),
-        airline=airline or "N/A",
-    )
-
-
-def find_cheapest_flight_in_month(
-    year: int,
-    month: int,
-    origin: str,
-    dest: str,
-    trip: str,
-    stay_nights: int,
-    adults: int,
-    seat: str,
-) -> Optional[FlightOption]:
-    """Find the cheapest option within the month for the given route."""
-
-    days_in_month = monthrange(year, month)[1]
-    best: Optional[FlightOption] = None
-
-    for day in range(1, days_in_month + 1):
-        depart = date(year, month, day)
-        return_d = depart + timedelta(days=stay_nights) if trip == "round-trip" else None
-
-        option = search_flights_for_date(
-            depart=depart,
-            origin=origin,
-            dest=dest,
-            trip=trip,
-            return_date=return_d,
-            adults=adults,
-            seat=seat,
-        )
-        if option is None:
-            continue
-
-        if best is None or option.price_value < best.price_value:
-            best = option
-
-    return best
-
-
-# ==========================
-#  Hotels (LiteAPI)
-# ==========================
-
-
 def search_hotels_for_dates(
     checkin: date,
     checkout: date,
@@ -184,8 +85,6 @@ def search_hotels_for_dates(
     payload = {
         "occupancies": [{"adults": 2}],
         "sort": [{"field": "price", "direction": "ascending"}],
-        # LiteAPI는 보통 [min,max] 또는 리스트 둘 다 받는데,
-        # 여기서는 범위 리스트로 전달
         "starRating": list(range(min_star, max_star + 1)),
         "currency": currency,
         "guestNationality": nationality,
@@ -212,18 +111,71 @@ def search_hotels_for_dates(
 
     data = resp.json()
     hotels_raw = data.get("data") or []
+
+    # ✅ (핵심) 호텔 메타데이터가 별도 hotels 배열로 오는 케이스 대응
+    hotels_meta = data.get("hotels") or []
+    hotel_meta_map = {}
+    if isinstance(hotels_meta, list):
+        for h in hotels_meta:
+            if isinstance(h, dict) and h.get("id"):
+                hotel_meta_map[h["id"]] = h
+
+    def extract_name(hotel_info: dict, fallback: dict) -> str:
+        return (
+            hotel_info.get("name")
+            or hotel_info.get("hotelName")
+            or fallback.get("hotelName")
+            or ""
+        )
+
+    def extract_star(hotel_info: dict):
+        star = hotel_info.get("starRating")
+        if star is None:
+            star = hotel_info.get("stars")
+        if star is None:
+            star = hotel_info.get("rating")
+        return star
+
+    def extract_address(hotel_info: dict) -> str:
+        addr = hotel_info.get("address")
+        if isinstance(addr, dict):
+            parts = [
+                addr.get("line1"),
+                addr.get("line2"),
+                addr.get("city"),
+                addr.get("state"),
+                addr.get("postalCode"),
+                addr.get("country"),
+            ]
+            return " ".join([p for p in parts if p])
+        if isinstance(addr, str):
+            return addr
+        # 가끔 location 키로 오는 경우 대비
+        loc = hotel_info.get("location")
+        if isinstance(loc, dict):
+            parts = [loc.get("address"), loc.get("city"), loc.get("country")]
+            return " ".join([p for p in parts if p])
+        return ""
+
     rows: List[HotelOption] = []
 
     for hotel_obj in hotels_raw:
-        hotel_id = hotel_obj.get("hotelId") or ""
+        if not isinstance(hotel_obj, dict):
+            continue
 
-        # LiteAPI는 includeHotelData=True일 때 hotel 객체가 포함될 수 있음
+        hotel_id = hotel_obj.get("hotelId") or hotel_obj.get("id") or ""
+
+        # 1) includeHotelData=True면 여기에 들어올 수도 있음
         hotel_info = hotel_obj.get("hotel") or {}
-        name = hotel_info.get("name") or hotel_info.get("hotelName") or ""
-        star = hotel_info.get("starRating")
 
-        address_info = hotel_info.get("address") or {}
-        address = address_info.get("line1") or address_info.get("city") or ""
+        # 2) 비어있으면 hotels 메타에서 보강
+        if (not hotel_info) and hotel_id and hotel_id in hotel_meta_map:
+            hotel_info = hotel_meta_map[hotel_id] or {}
+
+        # ✅ 여기서 name/star/address 확정
+        name = extract_name(hotel_info, hotel_obj)
+        star = extract_star(hotel_info)
+        address = extract_address(hotel_info)
 
         room_types = hotel_obj.get("roomTypes") or []
         if not room_types:
@@ -239,9 +191,7 @@ def search_hotels_for_dates(
         curr = offer.get("currency", currency)
 
         first_rate = (best_room.get("rates") or [{}])[0]
-        refundable_tag = (first_rate.get("cancellationPolicies") or {}).get(
-            "refundableTag", ""
-        )
+        refundable_tag = (first_rate.get("cancellationPolicies") or {}).get("refundableTag", "")
 
         if total_price is None:
             continue
@@ -249,10 +199,10 @@ def search_hotels_for_dates(
         rows.append(
             HotelOption(
                 rank=0,
-                hotel_id=hotel_id,
-                name=name,
+                hotel_id=str(hotel_id),
+                name=str(name),
                 star_rating=star,
-                address=address,
+                address=str(address),
                 total_price=float(total_price),
                 currency=curr,
                 refundable_tag=refundable_tag,
