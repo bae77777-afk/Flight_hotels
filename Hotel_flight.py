@@ -66,6 +66,106 @@ def parse_price_to_float(price) -> float:
 # ==========================
 
 
+def search_flights_for_date(
+    depart: date,
+    origin: str,
+    dest: str,
+    trip: str = "one-way",
+    return_date: Optional[date] = None,
+    adults: int = 1,
+    seat: str = "economy",
+) -> Optional[FlightOption]:
+    """Return the cheapest flight for the given date(s) using fast_flights."""
+
+    date_str = depart.isoformat()
+    return_date_str = return_date.isoformat() if return_date else None
+
+    if trip == "round-trip" and return_date_str:
+        flight_data = [
+            FlightData(date=date_str, from_airport=origin, to_airport=dest),
+            FlightData(date=return_date_str, from_airport=dest, to_airport=origin),
+        ]
+    else:
+        flight_data = [FlightData(date=date_str, from_airport=origin, to_airport=dest)]
+
+    passengers = Passengers(
+        adults=adults,
+        children=0,
+        infants_in_seat=0,
+        infants_on_lap=0,
+    )
+
+    try:
+        result: Result = get_flights(
+            flight_data=flight_data,
+            trip="round-trip" if trip == "round-trip" else "one-way",
+            seat=seat,
+            passengers=passengers,
+            fetch_mode="fallback",
+            
+        )
+    except Exception:
+        return None
+
+    flights = getattr(result, "flights", None)
+    if not flights:
+        return None
+
+    cheapest = min(flights, key=lambda f: parse_price_to_float(getattr(f, "price", None)))
+    price_raw = getattr(cheapest, "price", "")
+    airline = getattr(cheapest, "name", "") or getattr(cheapest, "airline", "")
+
+    return FlightOption(
+        depart_date=depart,
+        return_date=return_date,
+        price_value=parse_price_to_float(price_raw),
+        price_raw=str(price_raw),
+        airline=airline or "N/A",
+    )
+
+
+def find_cheapest_flight_in_month(
+    year: int,
+    month: int,
+    origin: str,
+    dest: str,
+    trip: str,
+    stay_nights: int,
+    adults: int,
+    seat: str,
+) -> Optional[FlightOption]:
+    """Find the cheapest option within the month for the given route."""
+
+    days_in_month = monthrange(year, month)[1]
+    best: Optional[FlightOption] = None
+
+    for day in range(1, days_in_month + 1):
+        depart = date(year, month, day)
+        return_d = depart + timedelta(days=stay_nights) if trip == "round-trip" else None
+
+        option = search_flights_for_date(
+            depart=depart,
+            origin=origin,
+            dest=dest,
+            trip=trip,
+            return_date=return_d,
+            adults=adults,
+            seat=seat,
+        )
+        if option is None:
+            continue
+
+        if best is None or option.price_value < best.price_value:
+            best = option
+
+    return best
+
+
+# ==========================
+#  Hotels (LiteAPI)
+# ==========================
+
+
 def search_hotels_for_dates(
     checkin: date,
     checkout: date,
@@ -214,3 +314,4 @@ def search_hotels_for_dates(
         r.rank = i
 
     return rows
+
