@@ -45,7 +45,7 @@ def fetch_rates(payload: dict) -> dict:
         "content-type": "application/json",
         "X-API-Key": LITEAPI_API_KEY,
     }
-    resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=20)
+    resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=120)
     resp.raise_for_status()
     return resp.json()
 
