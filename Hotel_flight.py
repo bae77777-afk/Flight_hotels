@@ -176,30 +176,31 @@ def search_hotels_for_dates(
     limit: int = 100,
     currency: str = "KRW",
     nationality: str = "KR",
+    adults: int = 2,   # ✅ 추가: 성인 수 반영
 ) -> List[HotelOption]:
     """Fetch hotels from LiteAPI and return them sorted by price."""
 
     if not LITEAPI_API_KEY:
         raise RuntimeError("LITEAPI_KEY 환경변수가 설정되지 않았습니다.")
 
+    if min_star > max_star:
+        min_star, max_star = max_star, min_star
+
     payload = {
-        "occupancies": [{"adults": 2}],
+        "occupancies": [{"adults": int(adults)}],  # ✅ 고정 2 -> 입력값
         "sort": [{"field": "price", "direction": "ascending"}],
-        # LiteAPI는 보통 [min,max] 또는 리스트 둘 다 받는데,
-        # 여기서는 범위 리스트로 전달
-        "starRating": list(range(min_star, max_star + 1)),
+        "starRating": list(range(int(min_star), int(max_star) + 1)),
         "currency": currency,
         "guestNationality": nationality,
         "checkin": checkin.isoformat(),
         "checkout": checkout.isoformat(),
-        "timeout": 6,
         "maxRatesPerHotel": 1,
         "boardType": "RO",
         "refundableRatesOnly": False,
         "cityName": city_name,
         "countryCode": country_code,
         "includeHotelData": True,
-        "limit": limit,
+        "limit": int(limit),
     }
 
     headers = {
@@ -208,58 +209,51 @@ def search_hotels_for_dates(
         "X-API-Key": LITEAPI_API_KEY,
     }
 
- try:
-    # connect 10초, read 60초 (상황에 맞게 조절)
-    resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=(10, 60))
-    resp.raise_for_status()
-except requests.exceptions.Timeout:
-    return []  # 또는 "타임아웃" 표시용 값 반환
-except requests.exceptions.RequestException as e:
-    return []
+    try:
+        # connect 10초, read 60초
+        resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=(10, 60))
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.exceptions.Timeout:
+        return []
+    except requests.exceptions.RequestException:
+        return []
+    except ValueError:
+        # JSON 파싱 실패
+        return []
 
-    
-    data = resp.json()
-    
     hotels_raw = data.get("data") or []
-    
-    # ✅ 여기 추가: 호텔 메타 맵
+
+    # 호텔 메타 보강
     hotels_meta = data.get("hotels") or []
     hotel_meta_map = {h.get("id"): h for h in hotels_meta if h.get("id")}
-    
+
     rows: List[HotelOption] = []
-    
-    for idx, hotel_obj in enumerate(hotels_raw, start=1):
+
+    for hotel_obj in hotels_raw:
         hotel_id = hotel_obj.get("hotelId") or ""
-    
-        # 1) 기존 방식 (혹시 들어오면 사용)
+
         hotel_info = hotel_obj.get("hotel") or {}
-    
-        # 2) ✅ 없으면 meta_map에서 보강
         if (not hotel_info) and hotel_id in hotel_meta_map:
             hotel_info = hotel_meta_map[hotel_id] or {}
-    
-        # ✅ LiteAPI 메타 키가 rating/주소 문자열 등으로 올 수도 있어서 유연하게 처리
+
         name = (
             hotel_info.get("name")
             or hotel_info.get("hotelName")
             or hotel_obj.get("hotelName")
             or ""
         )
-    
+
         star = hotel_info.get("starRating")
         if star is None:
-            star = hotel_info.get("rating")  # some responses use rating
-    
+            star = hotel_info.get("rating")
+
         address = ""
         addr = hotel_info.get("address")
         if isinstance(addr, dict):
             address = addr.get("line1") or addr.get("city") or ""
         elif isinstance(addr, str):
             address = addr
-    
-        # 이하 roomTypes/price/refundable 파싱은 기존 그대로
-
-  
 
         room_types = hotel_obj.get("roomTypes") or []
         if not room_types:
@@ -275,9 +269,7 @@ except requests.exceptions.RequestException as e:
         curr = offer.get("currency", currency)
 
         first_rate = (best_room.get("rates") or [{}])[0]
-        refundable_tag = (first_rate.get("cancellationPolicies") or {}).get(
-            "refundableTag", ""
-        )
+        refundable_tag = (first_rate.get("cancellationPolicies") or {}).get("refundableTag", "")
 
         if total_price is None:
             continue

@@ -6,11 +6,15 @@ from datetime import date, timedelta
 from typing import Dict, List
 
 import requests
-from flask import Flask, abort, request, render_template_string
+from flask import Flask, abort, request, render_template_string, render_template
 
 from Hotel_flight import find_cheapest_flight_in_month, search_hotels_for_dates
 
 app = Flask(__name__)
+
+@app.get("/")
+def index():
+    return render_template("index.html", title="소개")
 
 # --- Secrets / config via environment variables ---
 LITEAPI_API_KEY = os.environ.get("LITEAPI_KEY")
@@ -143,6 +147,7 @@ def get_min_price_for_date_via_helper(
     currency: str,
     nationality: str,
     limit: int,
+    adults: int,
 ):
     checkout = checkin + timedelta(days=nights)
     hotels = search_hotels_for_dates(
@@ -155,6 +160,9 @@ def get_min_price_for_date_via_helper(
         limit=limit,
         currency=currency,
         nationality=nationality,
+        adults=adults
+        
+        
     )
     if not hotels:
         return None
@@ -181,6 +189,7 @@ def find_cheapest_hotel_in_month(
     currency: str,
     nationality: str,
     limit: int,
+    adults: int,
 ):
     last_day = calendar.monthrange(year, month)[1]
     daily_results: List[Dict] = []
@@ -198,6 +207,7 @@ def find_cheapest_hotel_in_month(
                 currency=currency,
                 nationality=nationality,
                 limit=limit,
+                adults=adults,
             )
         except Exception:
             continue
@@ -216,191 +226,11 @@ def find_cheapest_hotel_in_month(
 # Template
 # -----------------------------
 
-TEMPLATE = """
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <title>항공 + 호텔 최저가 툴</title>
-  <style>
-    body { font-family: sans-serif; max-width: 1100px; margin: 20px auto; }
-    fieldset { margin-bottom: 1rem; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 4px 6px; font-size: 0.9rem; }
-    th { background: #f0f0f0; }
-    .mode-select { display: flex; gap: 1rem; margin-bottom: .5rem; }
-    .section-title { margin-top: 1.5rem; }
-  </style>
-</head>
-<body>
-  <h1>항공 + 호텔 최저가 웹툴</h1>
-  <form method="post">
-    <fieldset>
-      <legend>검색 모드</legend>
-      <div class="mode-select">
-        <label><input type="radio" name="mode" value="hotel_period" {{ 'checked' if mode == 'hotel_period' else '' }}> 호텔 최저가 (여행기간)</label>
-        <label><input type="radio" name="mode" value="hotel_month" {{ 'checked' if mode == 'hotel_month' else '' }}> 호텔 최저가 (한달)</label>
-        <label><input type="radio" name="mode" value="flight_hotel_month" {{ 'checked' if mode == 'flight_hotel_month' else '' }}> 항공 + 호텔 (한달 최저가)</label>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>호텔 공통 설정</legend>
-      <label>도시 (cityName): <input name="city" value="{{ city }}"></label>
-      <label>국가코드 (countryCode): <input name="country" value="{{ country }}" size="4"></label>
-      <br><br>
-      <label>성인 인원수: <input name="adults" value="{{ adults }}" size="3"></label>
-      <label>최소 성급: <input name="min_stars" value="{{ min_stars }}" size="3"></label>
-      <label>최대 성급: <input name="max_stars" value="{{ max_stars }}" size="3"></label>
-      <label>통화: <input name="currency" value="{{ currency }}" size="5"></label>
-      <label>국적: <input name="guest_nat" value="{{ guest_nat }}" size="4"></label>
-    </fieldset>
-
-    <fieldset>
-      <legend>호텔 최저가 (여행기간)</legend>
-      <label>체크인 (YYYY-MM-DD): <input name="checkin" value="{{ checkin }}"></label>
-      <label>체크아웃 (YYYY-MM-DD): <input name="checkout" value="{{ checkout }}"></label>
-      <label>Top N: <input name="top_n" value="{{ top_n }}" size="3"></label>
-      <label>Limit: <input name="limit" value="{{ limit }}" size="4"></label>
-    </fieldset>
-
-    <fieldset>
-      <legend>호텔 / 항공 한달 검색 공통</legend>
-      <label>기준 연도: <input name="year" value="{{ year }}" size="5"></label>
-      <label>기준 월: <input name="month" value="{{ month }}" size="3"></label>
-      <label>숙박일수(박): <input name="nights" value="{{ nights }}" size="3"></label>
-    </fieldset>
-
-    <fieldset>
-      <legend>항공 설정 (항공 + 호텔 모드에서 사용)</legend>
-      <label>출발 공항 (IATA): <input name="origin" value="{{ origin }}" size="5"></label>
-      <label>도착 공항 (IATA): <input name="dest" value="{{ dest }}" size="5"></label>
-      <label>여정 타입:
-        <select name="trip">
-          <option value="round-trip" {% if trip == 'round-trip' %}selected{% endif %}>왕복</option>
-          <option value="one-way" {% if trip == 'one-way' %}selected{% endif %}>편도</option>
-        </select>
-      </label>
-      <label>좌석 등급:
-        <select name="seat">
-          <option value="economy" {% if seat == 'economy' %}selected{% endif %}>Economy</option>
-          <option value="premium_economy" {% if seat == 'premium_economy' %}selected{% endif %}>Premium Economy</option>
-          <option value="business" {% if seat == 'business' %}selected{% endif %}>Business</option>
-          <option value="first" {% if seat == 'first' %}selected{% endif %}>First</option>
-        </select>
-      </label>
-      <label>항공 검색 인원수: <input name="flight_adults" value="{{ flight_adults }}" size="3"></label>
-      <label>호텔 TOP N (항공+호텔 모드): <input name="fh_top_n" value="{{ fh_top_n }}" size="3"></label>
-    </fieldset>
-
-    <button type="submit">검색하기</button>
-  </form>
-
-  {% if error %}
-    <p style="color:red;">에러: {{ error }}</p>
-  {% endif %}
-
-  {% if mode == 'hotel_period' and period_rows %}
-    <h2 class="section-title">호텔 최저가 (여행기간) 결과</h2>
-    <table>
-      <tr>
-        <th>No</th><th>호텔 이름</th><th>성급</th><th>총액</th><th>통화</th><th>환불여부</th><th>주소</th>
-      </tr>
-      {% for r in period_rows %}
-      <tr>
-        <td>{{ r.no }}</td>
-        <td>{{ r.name }}</td>
-        <td>{{ r.rating }}</td>
-        <td style="text-align:right">{{ r.price }}</td>
-        <td>{{ r.currency }}</td>
-        <td>{{ r.refundable }}</td>
-        <td>{{ r.address }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
-
-  {% if mode == 'hotel_month' and monthly_results %}
-    <h2 class="section-title">호텔 최저가 (한달 스캔) 결과 – {{ year }}-{{ '%02d'|format(month) }}</h2>
-    {% if hotel_cheapest %}
-      <p><strong>이 달 호텔 최저가</strong>:
-        {{ hotel_cheapest.checkin }} ~ {{ hotel_cheapest.checkout }},
-        {{ hotel_cheapest.hotelName }} - {{ hotel_cheapest.price }} {{ hotel_cheapest.currency }}
-      </p>
-    {% endif %}
-    <table>
-      <tr>
-        <th>No</th><th>Checkin</th><th>Checkout</th><th>호텔</th><th>Price</th><th>통화</th>
-      </tr>
-      {% for r in monthly_results %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td>{{ r.checkin }}</td>
-        <td>{{ r.checkout }}</td>
-        <td>{{ r.hotelName }}</td>
-        <td style="text-align:right">{{ r.price }}</td>
-        <td>{{ r.currency }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
-
-  {% if mode == 'flight_hotel_month' and best_flight %}
-    <h2 class="section-title">한달 기준 항공 + 호텔 최저가</h2>
-    <h3>① 이 달 최저가 항공 일정</h3>
-    <ul>
-      <li>출발 공항: {{ origin }} → 도착 공항: {{ dest }}</li>
-      <li>출발일: {{ best_flight.depart_date }}</li>
-      {% if best_flight.return_date %}
-        <li>귀국일: {{ best_flight.return_date }}</li>
-      {% else %}
-        <li>편도 (체류 {{ nights }}박 기준 호텔 검색)</li>
-      {% endif %}
-      <li>항공사: {{ best_flight.airline }}</li>
-      <li>가격: {{ best_flight.price_raw }} (추출값: {{ best_flight.price_value|round(0) }})</li>
-    </ul>
-
-    {% if fh_hotels %}
-      <h3>② 해당 일정 기준 호텔 최저가 TOP {{ fh_hotels|length }}</h3>
-      <table>
-        <tr>
-          <th>Rank</th><th>호텔 이름</th><th>성급</th><th>총액</th><th>통화</th><th>환불여부</th><th>주소</th>
-        </tr>
-        {% for h in fh_hotels %}
-        <tr>
-          <td>{{ h.rank }}</td>
-          <td>{{ h.name }}</td>
-          <td>{{ h.star_rating }}</td>
-          <td style="text-align:right">{{ h.total_price }}</td>
-          <td>{{ h.currency }}</td>
-          <td>{{ h.refundable_tag }}</td>
-          <td>{{ h.address }}</td>
-        </tr>
-        {% endfor %}
-      </table>
-
-      {% if combined_total and combo_hotel %}
-        <h3>③ 항공 + 호텔 합산 최저가</h3>
-        <p>
-          항공 (약 {{ best_flight.price_value|round(0) }}) +
-          호텔 “{{ combo_hotel.name }}” ({{ combo_hotel.total_price }}) =
-          <strong>{{ combined_total|round(0) }}</strong>
-          {{ combo_hotel.currency }} (동일 통화 기준 추정)
-        </p>
-      {% endif %}
-
-    {% else %}
-      <p>해당 일정에 대한 호텔 검색 결과가 없습니다.</p>
-    {% endif %}
-  {% endif %}
-
-</body>
-</html>
-"""
 
 
-@app.route("/", methods=["GET", "POST"])
-def index():
+
+@app.route("/travel", methods=["GET", "POST"])
+def travel():
     mode = "flight_hotel_month"
 
     city = "Sapporo"
@@ -515,6 +345,7 @@ def index():
                     currency=currency,
                     nationality=guest_nat,
                     limit=limit,
+                    adults=adults,
                 )
 
             elif mode == "flight_hotel_month":
@@ -561,38 +392,40 @@ def index():
         except Exception as e:
             error = str(e)
 
-    return render_template_string(
-        TEMPLATE,
-        mode=mode,
-        city=city,
-        country=country,
-        adults=adults,
-        min_stars=min_stars,
-        max_stars=max_stars,
-        currency=currency,
-        guest_nat=guest_nat,
-        checkin=checkin,
-        checkout=checkout,
-        top_n=top_n,
-        limit=limit,
-        year=year,
-        month=month,
-        nights=nights,
-        origin=origin,
-        dest=dest,
-        trip=trip,
-        seat=seat,
-        flight_adults=flight_adults,
-        fh_top_n=fh_top_n,
-        period_rows=period_rows,
-        monthly_results=monthly_results,
-        hotel_cheapest=hotel_cheapest,
-        best_flight=best_flight,
-        fh_hotels=fh_hotels,
-        error=error,
-        combined_total=combined_total,
-        combo_hotel=combo_hotel,
-    )
+    return render_template(
+    "travel.html",
+    title="여행툴",
+    mode=mode,
+    city=city,
+    country=country,
+    adults=adults,
+    min_stars=min_stars,
+    max_stars=max_stars,
+    currency=currency,
+    guest_nat=guest_nat,
+    checkin=checkin,
+    checkout=checkout,
+    top_n=top_n,
+    limit=limit,
+    year=year,
+    month=month,
+    nights=nights,
+    origin=origin,
+    dest=dest,
+    trip=trip,
+    seat=seat,
+    flight_adults=flight_adults,
+    fh_top_n=fh_top_n,
+    error=error,
+    period_rows=period_rows,
+    monthly_results=monthly_results,
+    hotel_cheapest=hotel_cheapest,
+    best_flight=best_flight,
+    fh_hotels=fh_hotels,
+    combined_total=combined_total,
+    combo_hotel=combo_hotel,
+)
+
 
 
 if __name__ == "__main__":

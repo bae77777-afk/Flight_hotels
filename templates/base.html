@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ title or "Portfolio" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">오물오물</a>
+
+      <nav class="tabs">
+        <a href="/" class="{{ 'active' if request.path=='/' else '' }}">소개</a>
+        <a href="/travel" class="{{ 'active' if request.path.startswith('/travel') else '' }}">여행툴</a>
+      </nav>
+
+      <div class="nav-cta">
+        <a class="btn ghost" href="#contact">Contact</a>
+        <a class="btn" href="/travel">툴 열기</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+    <footer class="footer">
+      <div>© {{ (now().year if now is defined else "") }} 오물오물</div>
+      <div class="muted">Built with Flask</div>
+    </footer>
+  </main>
+</body>
+</html>

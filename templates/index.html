@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-left">
+    <div class="badge">Portfolio • Finance & Automation</div>
+    <h1>
+      데이터 기반으로<br/>
+      “일이 빨라지는 구조”를 만드는 사람
+    </h1>
+    <p class="lead">
+      회계/재무 기반의 분석 역량과 파이썬 자동화를 결합해,
+      반복 업무를 줄이고 의사결정을 빠르게 만드는 프로젝트를 만들어왔습니다.
+    </p>
+
+    <div class="hero-actions">
+      <a class="btn" href="/travel">여행툴 보러가기</a>
+      <a class="btn ghost" href="#projects">프로젝트</a>
+      <a class="btn ghost" href="#about">About</a>
+    </div>
+
+    <div class="chips">
+      <span class="chip">Python</span>
+      <span class="chip">Flask</span>
+      <span class="chip">Excel / Automation</span>
+      <span class="chip">Finance / Accounting</span>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="card glass">
+      <div class="card-title">지금 사이트 구성</div>
+      <div class="card-desc">
+        <div class="row"><span class="muted">소개</span><span>/</span></div>
+        <div class="row"><span class="muted">여행툴</span><span>/travel</span></div>
+      </div>
+      <div class="mini-kpis">
+        <div class="kpi">
+          <div class="kpi-num">Top N</div>
+          <div class="kpi-label">결과 요약</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-num">Fast</div>
+          <div class="kpi-label">가볍게 유지</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-num">One Domain</div>
+          <div class="kpi-label">탭으로 분리</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about" class="section">
+  <div class="section-head">
+    <h2>About</h2>
+    <p class="muted">짧고 선명하게: “무엇을, 왜, 어떻게”</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>What I do</h3>
+      <ul class="list">
+        <li>회계/재무 기반의 데이터 정리 및 분석</li>
+        <li>반복 업무 자동화(스크립트/엑셀/간단 웹앱)</li>
+        <li>결과를 “바로 쓰는 형태(표/리포트/대시보드)”로 제공</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>How I work</h3>
+      <ul class="list">
+        <li>요구사항을 입력/출력 기준으로 쪼개서 설계</li>
+        <li>작게 만들고, 빠르게 써보며 개선(반복)</li>
+        <li>에러/예외/성능(타임아웃)까지 현실적으로 챙김</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="projects" class="section">
+  <div class="section-head">
+    <h2>Projects</h2>
+    <p class="muted">작동하는 결과물 중심</p>
+  </div>
+
+  <div class="cards">
+    <a class="card project" href="/travel">
+      <div class="project-top">
+        <div class="project-title">호텔 + 항공 최저가 검색 툴</div>
+        <div class="tag">Live</div>
+      </div>
+      <div class="project-desc">
+        한 달 최저가 항공을 찾고, 일정에 맞춰 호텔을 검색해 결과를 정리합니다.
+      </div>
+      <div class="project-meta">
+        <span class="pill">Flask</span>
+        <span class="pill">API</span>
+        <span class="pill">Automation</span>
+      </div>
+    </a>
+
+    <div class="card project">
+      <div class="project-top">
+        <div class="project-title">재무/회계 자동화 (예시)</div>
+        <div class="tag ghost">Coming</div>
+      </div>
+      <div class="project-desc">
+        엑셀/데이터 정리 자동화, 리포트 생성 등 업무 효율화 작업을 확장 예정.
+      </div>
+      <div class="project-meta">
+        <span class="pill">Excel</span>
+        <span class="pill">Python</span>
+        <span class="pill">Reporting</span>
+      </div>
+    </div>
+
+    <div class="card project">
+      <div class="project-top">
+        <div class="project-title">리서치/분석 프로젝트 (예시)</div>
+        <div class="tag ghost">Coming</div>
+      </div>
+      <div class="project-desc">
+        데이터 기반의 실증 분석, 모델 검증, 시각화 자료 제작.
+      </div>
+      <div class="project-meta">
+        <span class="pill">Statistics</span>
+        <span class="pill">Pandas</span>
+        <span class="pill">Visualization</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="skills" class="section">
+  <div class="section-head">
+    <h2>Skills</h2>
+    <p class="muted">필요한 것 위주로 계속 업데이트</p>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <h3>Dev</h3>
+      <div class="skill">
+        <span>Python / Flask</span><span class="muted">웹/자동화</span>
+      </div>
+      <div class="skill">
+        <span>API 연동</span><span class="muted">데이터 수집</span>
+      </div>
+      <div class="skill">
+        <span>배포</span><span class="muted">Render 등</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Data</h3>
+      <div class="skill"><span>Excel</span><span class="muted">정리/자동화</span></div>
+      <div class="skill"><span>Pandas</span><span class="muted">가공/분석</span></div>
+      <div class="skill"><span>시각화</span><span class="muted">보고용 차트</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Business</h3>
+      <div class="skill"><span>회계/재무</span><span class="muted">기본기</span></div>
+      <div class="skill"><span>문서화</span><span class="muted">명확한 전달</span></div>
+      <div class="skill"><span>문제해결</span><span class="muted">원인-대안</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="section">
+  <div class="section-head">
+    <h2>Contact</h2>
+    <p class="muted">링크만 바꿔서 바로 사용</p>
+  </div>
+
+  <div class="card">
+    <div class="contact-grid">
+      <div>
+        <div class="muted">Email</div>
+        <div class="contact-item">you@example.com</div>
+      </div>
+      <div>
+        <div class="muted">GitHub</div>
+        <div class="contact-item">github.com/bae77777-afk</div>
+      </div>
+      <div>
+        <div class="muted">Resume</div>
+        <div class="contact-item">PDF 링크(옵션)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
