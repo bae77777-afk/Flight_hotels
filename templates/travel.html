@@ -1,169 +1,309 @@
-{% extends "base.html" %}
-{% block content %}
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>여행 툴 | 항공 + 호텔 최저가</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --shadow: 0 10px 30px rgba(17,24,39,.08);
+      --shadow2: 0 6px 18px rgba(17,24,39,.08);
+      --radius:18px;
+      --accent:#2563eb;
+      --accent2:#22c55e;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Apple SD Gothic Neo, "Noto Sans KR", sans-serif;
+    }
+    a{color:inherit; text-decoration:none}
+    .wrap{max-width:1100px; margin:0 auto; padding:22px;}
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:18px;
+    }
+    .brand{display:flex; gap:10px; align-items:center; font-weight:800;}
+    .dot{width:10px;height:10px;border-radius:999px;background:var(--accent);}
+    .tabs{
+      display:flex; gap:10px;
+      background:rgba(255,255,255,.7);
+      border:1px solid var(--line);
+      padding:6px; border-radius:999px;
+      box-shadow: var(--shadow2);
+    }
+    .tab{
+      padding:8px 12px; border-radius:999px; font-weight:700; color:var(--muted);
+    }
+    .tab.active{background:var(--card); color:var(--text); border:1px solid var(--line);}
+    .hero{
+      display:grid; grid-template-columns: 1.3fr .9fr;
+      gap:16px; margin-bottom:16px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .hero h1{margin:0 0 8px 0; font-size:24px;}
+    .hero p{margin:0; color:var(--muted); line-height:1.5;}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      background:#eff6ff; color:#1d4ed8; border:1px solid #dbeafe;
+      padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px;
+      margin-top:12px;
+    }
+    .pill .mini{width:8px;height:8px;border-radius:999px;background:var(--accent);}
+    .card-title{font-weight:900; margin-bottom:10px;}
+    .rows{display:grid; gap:10px;}
+    .row{display:flex; align-items:center; justify-content:space-between; padding:10px 12px;
+      border:1px dashed var(--line); border-radius:14px; background:#fafafa;
+    }
+    .muted{color:var(--muted); font-weight:700;}
+    .chip{
+      display:inline-flex; align-items:center;
+      padding:4px 10px; border-radius:999px;
+      border:1px solid var(--line); background:#fff; font-weight:800; font-size:12px;
+    }
+    .mini-kpis{
+      display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px;
+    }
+    .kpi{border:1px solid var(--line); border-radius:14px; padding:10px; background:#fff;}
+    .kpi-num{font-weight:900;}
+    .kpi-label{color:var(--muted); font-size:12px; margin-top:4px;}
 
-<section class="section">
-  <div class="section-head">
-    <h2>여행툴</h2>
-    <p class="muted">항공 + 호텔 최저가 웹툴</p>
-  </div>
+    form{margin-top:12px;}
+    fieldset{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+      margin:12px 0;
+    }
+    legend{padding:0 8px; font-weight:900; color:#111827;}
+    label{display:inline-flex; align-items:center; gap:8px; margin:6px 10px 6px 0;}
+    input, select{
+      padding:9px 10px; border-radius:12px;
+      border:1px solid var(--line); background:#fff; color:var(--text);
+      outline:none;
+    }
+    input:focus, select:focus{border-color:#bfdbfe; box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+    .btn{
+      padding:10px 14px; border-radius:14px; border:1px solid #bfdbfe;
+      background:linear-gradient(180deg,#eff6ff,#ffffff);
+      font-weight:900; cursor:pointer;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+    .helper{color:var(--muted); font-size:12px; margin-top:6px;}
 
-  <div class="card">
-    <form method="post" class="form">
-      <fieldset>
-        <legend>검색 모드</legend>
-        <div class="mode-select">
-          <label><input type="radio" name="mode" value="hotel_period" {{ 'checked' if mode == 'hotel_period' else '' }}> 호텔 최저가 (여행기간)</label>
-          <label><input type="radio" name="mode" value="hotel_month" {{ 'checked' if mode == 'hotel_month' else '' }}> 호텔 최저가 (한달)</label>
-          <label><input type="radio" name="mode" value="flight_hotel_month" {{ 'checked' if mode == 'flight_hotel_month' else '' }}> 항공 + 호텔 (한달 최저가)</label>
-        </div>
-      </fieldset>
+    table{border-collapse:collapse; width:100%; margin-top:10px; background:#fff; border-radius:14px; overflow:hidden; border:1px solid var(--line);}
+    th, td{border-bottom:1px solid var(--line); padding:10px 10px; font-size:0.92rem;}
+    th{background:#f9fafb; text-align:left;}
+    tr:last-child td{border-bottom:none;}
+    .right{text-align:right;}
+    .section-title{margin:18px 0 8px; font-size:18px;}
+    .error{color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; padding:10px 12px; border-radius:14px;}
 
-      <fieldset>
-        <legend>호텔 공통 설정</legend>
-        <div class="grid2">
-          <label>도시 (cityName)
-            <input name="city" value="{{ city }}">
-          </label>
-          <label>국가코드 (countryCode)
-            <input name="country" value="{{ country }}" maxlength="4">
-          </label>
-          <label>성인 인원수
-            <input name="adults" value="{{ adults }}">
-          </label>
-          <label>통화
-            <input name="currency" value="{{ currency }}" maxlength="5">
-          </label>
-          <label>최소 성급
-            <input name="min_stars" value="{{ min_stars }}">
-          </label>
-          <label>최대 성급
-            <input name="max_stars" value="{{ max_stars }}">
-          </label>
-          <label>국적
-            <input name="guest_nat" value="{{ guest_nat }}" maxlength="4">
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>호텔 최저가 (여행기간)</legend>
-        <div class="grid2">
-          <label>체크인 (YYYY-MM-DD)
-            <input name="checkin" value="{{ checkin }}">
-          </label>
-          <label>체크아웃 (YYYY-MM-DD)
-            <input name="checkout" value="{{ checkout }}">
-          </label>
-          <label>Top N
-            <input name="top_n" value="{{ top_n }}">
-          </label>
-          <label>Limit
-            <input name="limit" value="{{ limit }}">
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>호텔 / 항공 한달 검색 공통</legend>
-        <div class="grid2">
-          <label>기준 연도
-            <input name="year" value="{{ year }}">
-          </label>
-          <label>기준 월
-            <input name="month" value="{{ month }}">
-          </label>
-          <label>숙박일수(박)
-            <input name="nights" value="{{ nights }}">
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>항공 설정 (항공 + 호텔 모드에서 사용)</legend>
-        <div class="grid2">
-          <label>출발 공항 (IATA)
-            <input name="origin" value="{{ origin }}" maxlength="5">
-          </label>
-          <label>도착 공항 (IATA)
-            <input name="dest" value="{{ dest }}" maxlength="5">
-          </label>
-
-          <label>여정 타입
-            <select name="trip">
-              <option value="round-trip" {% if trip == 'round-trip' %}selected{% endif %}>왕복</option>
-              <option value="one-way" {% if trip == 'one-way' %}selected{% endif %}>편도</option>
-            </select>
-          </label>
-
-          <label>좌석 등급
-            <select name="seat">
-              <option value="economy" {% if seat == 'economy' %}selected{% endif %}>Economy</option>
-              <option value="premium_economy" {% if seat == 'premium_economy' %}selected{% endif %}>Premium Economy</option>
-              <option value="business" {% if seat == 'business' %}selected{% endif %}>Business</option>
-              <option value="first" {% if seat == 'first' %}selected{% endif %}>First</option>
-            </select>
-          </label>
-
-          <label>항공 검색 인원수
-            <input name="flight_adults" value="{{ flight_adults }}">
-          </label>
-
-          <label>호텔 TOP N (항공+호텔 모드)
-            <input name="fh_top_n" value="{{ fh_top_n }}">
-          </label>
-        </div>
-      </fieldset>
-
-      <div class="form-actions">
-        <button class="btn" type="submit">검색하기</button>
+    /* mode toggle */
+    .mode-box{display:flex; gap:10px; flex-wrap:wrap}
+    .mode-item{
+      display:flex; gap:8px; align-items:center;
+      padding:8px 10px; border:1px solid var(--line);
+      border-radius:999px; background:#fff; font-weight:800;
+    }
+    .hidden{display:none !important;}
+    @media (max-width: 920px){
+      .hero{grid-template-columns:1fr;}
+      .grid2,.grid3{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span> 여행 자동화</div>
+      <div class="tabs">
+        <a class="tab" href="/">소개</a>
+        <a class="tab active" href="/travel{% if current_key %}?key={{ current_key }}{% endif %}">여행툴</a>
       </div>
-    </form>
-  </div>
+    </div>
 
-  {% if error %}
-    <div class="card errorbox">에러: {{ error }}</div>
-  {% endif %}
+    <section class="hero">
+      <div class="card">
+        <h1>항공 + 호텔 최저가 웹툴</h1>
+        <p>
+          호텔은 LiteAPI, 항공은 fast-flights 기반으로 <b>기간/한달 스캔</b>을 지원해.
+          아래에서 모드 선택하고 바로 검색해봐.
+        </p>
+        <div class="pill"><span class="mini"></span> Tip: 모드에 따라 입력칸이 자동으로 바뀜</div>
 
-  {% if mode == 'hotel_period' and period_rows %}
+        {% if has_access_key %}
+          <div class="helper">ACCESS_KEY가 설정돼 있으면, 아래 key 입력(또는 URL ?key=...)이 필요해.</div>
+        {% endif %}
+      </div>
+
+      <!-- 너가 준 hero-right 카드: "글자만" 느낌 개선 -->
+      <div class="card">
+        <div class="card-title">사이트 구성</div>
+        <div class="rows">
+          <div class="row">
+            <div><span class="muted">소개</span></div>
+            <div class="chip">/</div>
+          </div>
+          <div class="row">
+            <div><span class="muted">여행툴</span></div>
+            <div class="chip">/travel</div>
+          </div>
+        </div>
+
+        <div class="mini-kpis">
+          <div class="kpi">
+            <div class="kpi-num">소개</div>
+            <div class="kpi-label">간단한 자기 소개</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num">프로젝트</div>
+            <div class="kpi-label">만들어온/만들어갈 것</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num">Contact</div>
+            <div class="kpi-label">연락 주세요</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="card">
-      <h3 class="section-title">호텔 최저가 (여행기간) 결과</h3>
-      <div class="table-wrap">
+      <form method="post">
+        {% if has_access_key %}
+          <label>key: <input name="key" value="{{ current_key }}" placeholder="ACCESS_KEY"></label>
+        {% endif %}
+
+        <fieldset>
+          <legend>검색 모드</legend>
+          <div class="mode-box">
+            <!-- ✅ 순서 변경: 호텔(기간) → 호텔(한달) → 항공+호텔(기간) → 항공+호텔(한달) -->
+            <label class="mode-item"><input type="radio" name="mode" value="hotel_period" {{ 'checked' if mode == 'hotel_period' else '' }}> 호텔 최저가 (여행기간)</label>
+            <label class="mode-item"><input type="radio" name="mode" value="hotel_month" {{ 'checked' if mode == 'hotel_month' else '' }}> 호텔 최저가 (한달)</label>
+            <label class="mode-item"><input type="radio" name="mode" value="flight_hotel_period" {{ 'checked' if mode == 'flight_hotel_period' else '' }}> 항공 + 호텔 (여행기간)</label>
+            <label class="mode-item"><input type="radio" name="mode" value="flight_hotel_month" {{ 'checked' if mode == 'flight_hotel_month' else '' }}> 항공 + 호텔 (한달)</label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>호텔 공통 설정</legend>
+          <div class="grid3">
+            <label>도시 <input name="city" value="{{ city }}"></label>
+            <label>국가코드 <input name="country" value="{{ country }}" size="4"></label>
+            <label>성인 인원수 <input name="adults" value="{{ adults }}" size="3"></label>
+          </div>
+          <div class="grid3">
+            <label>최소 성급 <input name="min_stars" value="{{ min_stars }}" size="3"></label>
+            <label>최대 성급 <input name="max_stars" value="{{ max_stars }}" size="3"></label>
+            <label>통화 <input name="currency" value="{{ currency }}" size="5"></label>
+          </div>
+          <label>국적 <input name="guest_nat" value="{{ guest_nat }}" size="4"></label>
+        </fieldset>
+
+        <fieldset id="fs-period">
+          <legend>여행기간 입력</legend>
+          <div class="grid2">
+            <label>체크인 <input name="checkin" value="{{ checkin }}" placeholder="YYYY-MM-DD"></label>
+            <label>체크아웃 <input name="checkout" value="{{ checkout }}" placeholder="YYYY-MM-DD"></label>
+          </div>
+          <div class="grid2">
+            <label>Top N <input name="top_n" value="{{ top_n }}" size="3"></label>
+            <label>Limit <input name="limit" value="{{ limit }}" size="4"></label>
+          </div>
+        </fieldset>
+
+        <fieldset id="fs-month">
+          <legend>한달 스캔 입력</legend>
+          <div class="grid3">
+            <label>기준 연도 <input name="year" value="{{ year }}" size="5"></label>
+            <label>기준 월 <input name="month" value="{{ month }}" size="3"></label>
+            <label>숙박일수(박) <input name="nights" value="{{ nights }}" size="3"></label>
+          </div>
+        </fieldset>
+
+        <fieldset id="fs-flight">
+          <legend>항공 설정 (항공+호텔 모드에서 사용)</legend>
+          <div class="grid3">
+            <label>출발(IATA) <input name="origin" value="{{ origin }}" size="5"></label>
+            <label>도착(IATA) <input name="dest" value="{{ dest }}" size="5"></label>
+            <label>항공 인원 <input name="flight_adults" value="{{ flight_adults }}" size="3"></label>
+          </div>
+          <div class="grid3">
+            <label>여정
+              <select name="trip">
+                <option value="round-trip" {% if trip == 'round-trip' %}selected{% endif %}>왕복</option>
+                <option value="one-way" {% if trip == 'one-way' %}selected{% endif %}>편도</option>
+              </select>
+            </label>
+            <label>좌석
+              <select name="seat">
+                <option value="economy" {% if seat == 'economy' %}selected{% endif %}>Economy</option>
+                <option value="premium_economy" {% if seat == 'premium_economy' %}selected{% endif %}>Premium Economy</option>
+                <option value="business" {% if seat == 'business' %}selected{% endif %}>Business</option>
+                <option value="first" {% if seat == 'first' %}selected{% endif %}>First</option>
+              </select>
+            </label>
+            <label>호텔 TOP N <input name="fh_top_n" value="{{ fh_top_n }}" size="3"></label>
+          </div>
+          <div class="helper">
+            “항공+호텔(여행기간)”은 위의 체크인/체크아웃을 항공 날짜로 그대로 사용해.
+          </div>
+        </fieldset>
+
+        <button class="btn" type="submit">검색하기</button>
+      </form>
+
+      {% if error %}
+        <div class="error" style="margin-top:12px;">에러: {{ error }}</div>
+      {% endif %}
+
+      <!-- 결과: 호텔(여행기간) -->
+      {% if mode == 'hotel_period' and period_rows %}
+        <h2 class="section-title">호텔 최저가 (여행기간) 결과</h2>
         <table>
           <tr>
-            <th>No</th><th>호텔 이름</th><th>성급</th><th>총액</th><th>통화</th><th>환불여부</th><th>주소</th>
+            <th>No</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
           </tr>
           {% for r in period_rows %}
           <tr>
             <td>{{ r.no }}</td>
             <td>{{ r.name }}</td>
             <td>{{ r.rating }}</td>
-            <td class="num">{{ r.price }}</td>
+            <td class="right">{{ r.price }}</td>
             <td>{{ r.currency }}</td>
             <td>{{ r.refundable }}</td>
             <td>{{ r.address }}</td>
           </tr>
           {% endfor %}
         </table>
-      </div>
-    </div>
-  {% endif %}
-
-  {% if mode == 'hotel_month' and monthly_results %}
-    <div class="card">
-      <h3 class="section-title">호텔 최저가 (한달 스캔) 결과 – {{ year }}-{{ '%02d'|format(month) }}</h3>
-
-      {% if hotel_cheapest %}
-        <p class="muted" style="margin-top:0;">
-          <strong>이 달 호텔 최저가</strong>:
-          {{ hotel_cheapest.checkin }} ~ {{ hotel_cheapest.checkout }},
-          {{ hotel_cheapest.hotelName }} - {{ hotel_cheapest.price }} {{ hotel_cheapest.currency }}
-        </p>
       {% endif %}
 
-      <div class="table-wrap">
+      <!-- 결과: 호텔(한달) -->
+      {% if mode == 'hotel_month' and monthly_results %}
+        <h2 class="section-title">호텔 최저가 (한달 스캔) – {{ year }}-{{ '%02d'|format(month) }}</h2>
+        {% if hotel_cheapest %}
+          <p><b>이 달 호텔 최저가</b>:
+            {{ hotel_cheapest.checkin }} ~ {{ hotel_cheapest.checkout }},
+            {{ hotel_cheapest.hotelName }} - {{ hotel_cheapest.price }} {{ hotel_cheapest.currency }}
+          </p>
+        {% endif %}
         <table>
           <tr>
-            <th>No</th><th>Checkin</th><th>Checkout</th><th>호텔</th><th>Price</th><th>통화</th>
+            <th>No</th><th>Checkin</th><th>Checkout</th><th>호텔</th><th class="right">Price</th><th>통화</th>
           </tr>
           {% for r in monthly_results %}
           <tr>
@@ -171,67 +311,149 @@
             <td>{{ r.checkin }}</td>
             <td>{{ r.checkout }}</td>
             <td>{{ r.hotelName }}</td>
-            <td class="num">{{ r.price }}</td>
+            <td class="right">{{ r.price }}</td>
             <td>{{ r.currency }}</td>
           </tr>
           {% endfor %}
         </table>
-      </div>
-    </div>
-  {% endif %}
+      {% endif %}
 
-  {% if mode == 'flight_hotel_month' and best_flight %}
-    <div class="card">
-      <h3 class="section-title">한달 기준 항공 + 호텔 최저가</h3>
+      <!-- ✅ 결과: 항공+호텔(여행기간) -->
+      {% if mode == 'flight_hotel_period' %}
+        <h2 class="section-title">항공 + 호텔 (여행기간)</h2>
 
-      <h4>① 이 달 최저가 항공 일정</h4>
-      <ul class="list">
-        <li>출발 공항: {{ origin }} → 도착 공항: {{ dest }}</li>
-        <li>출발일: {{ best_flight.depart_date }}</li>
-        {% if best_flight.return_date %}
-          <li>귀국일: {{ best_flight.return_date }}</li>
+        {% if best_flight %}
+          <h3>① 최저가 항공</h3>
+          <ul>
+            <li>{{ origin }} → {{ dest }}</li>
+            <li>출발일: {{ best_flight.depart_date }}</li>
+            {% if best_flight.return_date %}
+              <li>귀국일: {{ best_flight.return_date }}</li>
+            {% else %}
+              <li>편도</li>
+            {% endif %}
+            <li>항공사: {{ best_flight.airline }}</li>
+            <li>가격: {{ best_flight.price_raw }} (추출값: {{ best_flight.price_value|round(0) }})</li>
+            {% if flight_price_krw %}
+              <li>KRW 환산(추정): {{ flight_price_krw }}</li>
+            {% endif %}
+          </ul>
         {% else %}
-          <li>편도 (체류 {{ nights }}박 기준 호텔 검색)</li>
+          <p>항공 검색 결과가 없습니다.</p>
         {% endif %}
-        <li>항공사: {{ best_flight.airline }}</li>
-        <li>가격: {{ best_flight.price_raw }} (추출값: {{ best_flight.price_value|round(0) }})</li>
-      </ul>
 
-      {% if fh_hotels %}
-        <h4>② 해당 일정 기준 호텔 최저가 TOP {{ fh_hotels|length }}</h4>
-        <div class="table-wrap">
+        {% if fh_hotels %}
+          <h3>② 동일 기간 호텔 TOP {{ fh_hotels|length }}</h3>
           <table>
             <tr>
-              <th>Rank</th><th>호텔 이름</th><th>성급</th><th>총액</th><th>통화</th><th>환불여부</th><th>주소</th>
+              <th>Rank</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
             </tr>
             {% for h in fh_hotels %}
             <tr>
               <td>{{ h.rank }}</td>
               <td>{{ h.name }}</td>
               <td>{{ h.star_rating }}</td>
-              <td class="num">{{ h.total_price }}</td>
+              <td class="right">{{ h.total_price }}</td>
               <td>{{ h.currency }}</td>
               <td>{{ h.refundable_tag }}</td>
               <td>{{ h.address }}</td>
             </tr>
             {% endfor %}
           </table>
-        </div>
 
-        {% if combined_total and combo_hotel %}
-          <h4>③ 항공 + 호텔 합산 최저가</h4>
-          <p class="muted">
-            항공 (약 {{ best_flight.price_value|round(0) }}) +
-            호텔 “{{ combo_hotel.name }}” ({{ combo_hotel.total_price }}) =
-            <strong>{{ combined_total|round(0) }}</strong>
-            {{ combo_hotel.currency }} (동일 통화 기준 추정)
-          </p>
+          {% if combined_total and combo_hotel %}
+            <h3>③ 항공 + 호텔 합산 최저가 (KRW 기준 추정)</h3>
+            <p>
+              항공(약 {{ flight_price_krw }}) + 호텔 “{{ combo_hotel.name }}”( {{ combo_hotel.total_price }} ) =
+              <b>{{ combined_total }}</b> {{ combo_hotel.currency }}
+            </p>
+          {% endif %}
+        {% else %}
+          <p>호텔 검색 결과가 없습니다.</p>
         {% endif %}
-      {% else %}
-        <p class="muted">해당 일정에 대한 호텔 검색 결과가 없습니다.</p>
       {% endif %}
-    </div>
-  {% endif %}
 
-</section>
-{% endblock %}
+      <!-- 결과: 항공+호텔(한달) -->
+      {% if mode == 'flight_hotel_month' and best_flight %}
+        <h2 class="section-title">항공 + 호텔 (한달)</h2>
+        <h3>① 이 달 최저가 항공 일정</h3>
+        <ul>
+          <li>{{ origin }} → {{ dest }}</li>
+          <li>출발일: {{ best_flight.depart_date }}</li>
+          {% if best_flight.return_date %}
+            <li>귀국일: {{ best_flight.return_date }}</li>
+          {% else %}
+            <li>편도 (체류 {{ nights }}박 기준 호텔 검색)</li>
+          {% endif %}
+          <li>항공사: {{ best_flight.airline }}</li>
+          <li>가격: {{ best_flight.price_raw }} (추출값: {{ best_flight.price_value|round(0) }})</li>
+          {% if flight_price_krw %}
+            <li>KRW 환산(추정): {{ flight_price_krw }}</li>
+          {% endif %}
+        </ul>
+
+        {% if fh_hotels %}
+          <h3>② 해당 일정 기준 호텔 TOP {{ fh_hotels|length }}</h3>
+          <table>
+            <tr>
+              <th>Rank</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
+            </tr>
+            {% for h in fh_hotels %}
+            <tr>
+              <td>{{ h.rank }}</td>
+              <td>{{ h.name }}</td>
+              <td>{{ h.star_rating }}</td>
+              <td class="right">{{ h.total_price }}</td>
+              <td>{{ h.currency }}</td>
+              <td>{{ h.refundable_tag }}</td>
+              <td>{{ h.address }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+
+          {% if combined_total and combo_hotel %}
+            <h3>③ 항공 + 호텔 합산 최저가 (KRW 기준 추정)</h3>
+            <p>
+              항공(약 {{ flight_price_krw }}) + 호텔 “{{ combo_hotel.name }}”( {{ combo_hotel.total_price }} ) =
+              <b>{{ combined_total }}</b> {{ combo_hotel.currency }}
+            </p>
+          {% endif %}
+        {% else %}
+          <p>해당 일정에 대한 호텔 검색 결과가 없습니다.</p>
+        {% endif %}
+      {% endif %}
+
+    </div>
+  </div>
+
+  <script>
+    function toggleFieldsets(mode){
+      const fsPeriod = document.getElementById("fs-period");
+      const fsMonth  = document.getElementById("fs-month");
+      const fsFlight = document.getElementById("fs-flight");
+
+      // 기본 숨김
+      fsPeriod.classList.add("hidden");
+      fsMonth.classList.add("hidden");
+      fsFlight.classList.add("hidden");
+
+      if (mode === "hotel_period"){
+        fsPeriod.classList.remove("hidden");
+      } else if (mode === "hotel_month"){
+        fsMonth.classList.remove("hidden");
+      } else if (mode === "flight_hotel_period"){
+        fsPeriod.classList.remove("hidden");
+        fsFlight.classList.remove("hidden");
+      } else if (mode === "flight_hotel_month"){
+        fsMonth.classList.remove("hidden");
+        fsFlight.classList.remove("hidden");
+      }
+    }
+
+    const radios = document.querySelectorAll("input[name='mode']");
+    radios.forEach(r => r.addEventListener("change", e => toggleFieldsets(e.target.value)));
+    // 초기 로딩
+    toggleFieldsets("{{ mode }}");
+  </script>
+</body>
+</html>
