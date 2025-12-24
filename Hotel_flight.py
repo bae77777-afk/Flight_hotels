@@ -101,10 +101,10 @@ def search_flights_for_date(
             trip="round-trip" if trip == "round-trip" else "one-way",
             seat=seat,
             passengers=passengers,
-            fetch_mode="common",
+            fetch_mode="fallback",
             
         )
-    except AssertionError as e:
+    except Exception:
         return None
 
     flights = getattr(result, "flights", None)
