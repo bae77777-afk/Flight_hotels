@@ -3,43 +3,59 @@ from __future__ import annotations
 import os
 import calendar
 from datetime import date, timedelta
-from typing import Dict, List
+from typing import Dict, List, Optional
+from types import SimpleNamespace
 
 import requests
-from flask import Flask, abort, request, render_template_string, render_template
+from flask import Flask, abort, request, render_template
 
 from Hotel_flight import find_cheapest_flight_in_month, search_hotels_for_dates
 
 app = Flask(__name__)
-
-@app.get("/")
-def index():
-    return render_template("index.html", title="소개")
 
 # --- Secrets / config via environment variables ---
 LITEAPI_API_KEY = os.environ.get("LITEAPI_KEY")
 ACCESS_KEY = os.environ.get("ACCESS_KEY")  # optional: simple shared secret for friends
 
 LITEAPI_URL = "https://api.liteapi.travel/v3.0/hotels/rates"
+USD_TO_KRW = 1450  # 대충 환산(원하면 나중에 환율 API로 바꾸면 됨)
 
 
-def _require_access_key():
-    """If ACCESS_KEY is set, require ?key=... on all requests."""
+# -----------------------------
+# Access gate (travel only)
+# -----------------------------
+def _require_access_key_for_travel():
+    """ACCESS_KEY가 설정돼 있으면 /travel 접근을 key로 제한."""
     if not ACCESS_KEY:
         return
-    if request.args.get("key") != ACCESS_KEY:
+    if request.endpoint != "travel":
+        return
+
+    provided = (
+        request.args.get("key")
+        or request.form.get("key")
+        or request.headers.get("X-Access-Key")
+    )
+    if provided != ACCESS_KEY:
         abort(403)
 
 
 @app.before_request
 def _gatekeeper():
-    _require_access_key()
+    _require_access_key_for_travel()
 
 
 # -----------------------------
-# LiteAPI helpers (hotel period/month modes)
+# Intro
 # -----------------------------
+@app.get("/")
+def index():
+    return render_template("index.html", title="소개")
 
+
+# -----------------------------
+# LiteAPI helpers (hotel period/month)
+# -----------------------------
 def fetch_rates(payload: dict) -> dict:
     if not LITEAPI_API_KEY:
         raise RuntimeError("LITEAPI_KEY 환경변수가 설정되지 않았습니다.")
@@ -49,7 +65,7 @@ def fetch_rates(payload: dict) -> dict:
         "content-type": "application/json",
         "X-API-Key": LITEAPI_API_KEY,
     }
-    resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=60)
+    resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=120)
     resp.raise_for_status()
     return resp.json()
 
@@ -109,7 +125,11 @@ def build_rows_from_rates(resp_json: dict, top_n: int = 10) -> List[Dict]:
 
         def get_offer_amount(rt: dict) -> float:
             offer = rt.get("offerRetailRate") or {}
-            return offer.get("amount", float("inf"))
+            amount = offer.get("amount", None)
+            try:
+                return float(amount)
+            except Exception:
+                return float("inf")
 
         best_room = min(room_types, key=get_offer_amount)
         offer = best_room.get("offerRetailRate") or {}
@@ -147,7 +167,6 @@ def get_min_price_for_date_via_helper(
     currency: str,
     nationality: str,
     limit: int,
-    adults: int,
 ):
     checkout = checkin + timedelta(days=nights)
     hotels = search_hotels_for_dates(
@@ -160,9 +179,6 @@ def get_min_price_for_date_via_helper(
         limit=limit,
         currency=currency,
         nationality=nationality,
-        adults=adults
-        
-        
     )
     if not hotels:
         return None
@@ -189,7 +205,6 @@ def find_cheapest_hotel_in_month(
     currency: str,
     nationality: str,
     limit: int,
-    adults: int,
 ):
     last_day = calendar.monthrange(year, month)[1]
     daily_results: List[Dict] = []
@@ -207,7 +222,6 @@ def find_cheapest_hotel_in_month(
                 currency=currency,
                 nationality=nationality,
                 limit=limit,
-                adults=adults,
             )
         except Exception:
             continue
@@ -218,111 +232,146 @@ def find_cheapest_hotel_in_month(
     if not daily_results:
         return None, []
 
-    cheapest = min(daily_results, key=lambda r: r["price"])
+    cheapest = min(daily_results, key=lambda r: float(r["price"]))
     return cheapest, daily_results
 
 
 # -----------------------------
-# Template
+# Flight helper (period mode)
 # -----------------------------
+def _parse_price_value(price_raw: str) -> Optional[float]:
+    if not price_raw:
+        return None
+    cleaned = "".join(ch for ch in str(price_raw) if ch.isdigit() or ch == ".")
+    if not cleaned:
+        return None
+    try:
+        return float(cleaned)
+    except Exception:
+        return None
 
 
+def find_cheapest_flight_for_dates(
+    depart: date,
+    ret: Optional[date],
+    origin: str,
+    dest: str,
+    trip: str,
+    adults: int,
+    seat: str,
+):
+    """
+    fast_flights로 해당 날짜/노선 최저가 항공 1개 반환.
+    (find_cheapest_flight_in_month() 결과처럼 SimpleNamespace로 맞춰줌)
+    """
+    try:
+        from fast_flights import FlightData, Passengers, get_flights  # type: ignore
+    except Exception as e:
+        raise RuntimeError(
+            "fast-flights 라이브러리를 불러오지 못했습니다. requirements.txt에 fast-flights가 필요합니다."
+        ) from e
+
+    flight_data = [FlightData(date=depart.isoformat(), from_airport=origin, to_airport=dest)]
+    if trip == "round-trip":
+        if not ret:
+            raise ValueError("왕복(trip=round-trip)에는 귀국일(ret)이 필요합니다.")
+        flight_data.append(FlightData(date=ret.isoformat(), from_airport=dest, to_airport=origin))
+
+    result = get_flights(
+        flight_data=flight_data,
+        trip=trip,
+        seat=seat,
+        passengers=Passengers(adults=adults),
+        fetch_mode="fallback",
+    )
+
+    flights = getattr(result, "flights", None) or []
+    if not flights:
+        return None
+
+    def _price_num(f):
+        val = _parse_price_value(getattr(f, "price", "") or "")
+        return val if val is not None else float("inf")
+
+    best = min(flights, key=_price_num)
+    price_raw = getattr(best, "price", "") or ""
+    price_value = _parse_price_value(price_raw)
+    airline = getattr(best, "name", "") or getattr(best, "airline", "") or ""
+
+    return SimpleNamespace(
+        depart_date=depart,
+        return_date=ret if trip == "round-trip" else None,
+        airline=airline,
+        price_raw=price_raw,
+        price_value=price_value,
+        currency="USD" if "$" in price_raw else "",
+        _raw_flight=best,
+    )
 
 
+# -----------------------------
+# Travel page
+# -----------------------------
 @app.route("/travel", methods=["GET", "POST"])
 def travel():
-    mode = "flight_hotel_month"
+    # 기본값
+    mode = request.form.get("mode") or "hotel_period"
 
-    city = "Sapporo"
-    country = "JP"
-    adults = 2
-    min_stars = 4
-    max_stars = 5
-    currency = "KRW"
-    guest_nat = "KR"
+    city = request.form.get("city") or "Tokyo"
+    country = request.form.get("country") or "JP"
 
-    checkin = "2026-01-01"
-    checkout = "2026-01-05"
-    top_n = 10
-    limit = 50
+    def _int(name: str, default: int) -> int:
+        try:
+            return int(request.form.get(name, default))
+        except Exception:
+            return default
 
-    year = 2026
-    month = 1
-    nights = 3
+    adults = _int("adults", 2)
+    min_stars = _int("min_stars", 4)
+    max_stars = _int("max_stars", 5)
+    currency = request.form.get("currency") or "KRW"
+    guest_nat = request.form.get("guest_nat") or "KR"
 
-    origin = "ICN"
-    dest = "CTS"
-    trip = "round-trip"
-    seat = "economy"
-    flight_adults = 1
-    fh_top_n = 10
+    checkin_s = request.form.get("checkin") or date.today().isoformat()
+    checkout_s = request.form.get("checkout") or (date.today() + timedelta(days=1)).isoformat()
+    top_n = _int("top_n", 10)
+    limit = _int("limit", 50)
 
-    period_rows: List[Dict] = []
-    monthly_results: List[Dict] = []
+    year = _int("year", date.today().year)
+    month = _int("month", date.today().month)
+    nights = _int("nights", 3)
+
+    origin = (request.form.get("origin") or "ICN").upper()
+    dest = (request.form.get("dest") or "NRT").upper()
+    trip = request.form.get("trip") or "round-trip"
+    seat = request.form.get("seat") or "economy"
+    flight_adults = _int("flight_adults", 1)
+    fh_top_n = _int("fh_top_n", 10)
+
+    # 결과 변수들
+    error = None
+    period_rows = []
+    monthly_results = []
     hotel_cheapest = None
+
     best_flight = None
     fh_hotels = []
-    error = None
-
-    combined_total = None
-
-    # 항공 통화 추정 (price_raw에 $/₩ 등이 있으면 간단히 추정)
-    flight_currency = None
-    if best_flight and getattr(best_flight, "price_raw", None):
-        flight_currency = "USD" if "$" in (best_flight.price_raw or "") else None
-
-    
-    combined_total = None
     combo_hotel = None
-
-    if best_flight and fh_hotels:
-        combo_hotel = fh_hotels[0]
-    # 통화가 같을 때만 합산(아래는 예시)
-        try:
-            combined_total = float(best_flight.price_value) + float(combo_hotel.total_price)
-        except Exception:
-            combined_total = None
-
-
-  
+    combined_total = None
+    flight_price_krw = None
 
     if request.method == "POST":
-        form = request.form
-        mode = form.get("mode", mode)
-
-        city = form.get("city", city)
-        country = form.get("country", country)
-        adults = int(form.get("adults", adults))
-        min_stars = int(form.get("min_stars", min_stars))
-        max_stars = int(form.get("max_stars", max_stars))
-        currency = form.get("currency", currency)
-        guest_nat = form.get("guest_nat", guest_nat)
-
-        checkin = form.get("checkin", checkin)
-        checkout = form.get("checkout", checkout)
-        top_n = int(form.get("top_n", top_n))
-        limit = int(form.get("limit", limit))
-
-        year = int(form.get("year", year))
-        month = int(form.get("month", month))
-        nights = int(form.get("nights", nights))
-
-        origin = form.get("origin", origin)
-        dest = form.get("dest", dest)
-        trip = form.get("trip", trip)
-        seat = form.get("seat", seat)
-        flight_adults = int(form.get("flight_adults", flight_adults))
-        fh_top_n = int(form.get("fh_top_n", fh_top_n))
-
         try:
+            # 날짜 파싱
+            checkin = date.fromisoformat(checkin_s)
+            checkout = date.fromisoformat(checkout_s)
+
             if mode == "hotel_period":
-                ci = date.fromisoformat(checkin)
-                co = date.fromisoformat(checkout)
                 payload = build_payload_for_period(
                     city=city,
                     country=country,
-                    checkin=ci,
-                    checkout=co,
+                    checkin=checkin,
+                    checkout=checkout,
                     min_stars=min_stars,
                     max_stars=max_stars,
                     adults=adults,
@@ -345,8 +394,57 @@ def travel():
                     currency=currency,
                     nationality=guest_nat,
                     limit=limit,
-                    adults=adults,
                 )
+
+            elif mode == "flight_hotel_period":
+                # 입력한 checkin/checkout을 항공 날짜로 사용
+                depart = checkin
+                ret = checkout if trip == "round-trip" else None
+
+                best_flight = find_cheapest_flight_for_dates(
+                    depart=depart,
+                    ret=ret,
+                    origin=origin,
+                    dest=dest,
+                    trip=trip,
+                    adults=flight_adults,
+                    seat=seat,
+                )
+
+                # 호텔은 여행기간 그대로
+                fh_hotels = search_hotels_for_dates(
+                    checkin=checkin,
+                    checkout=checkout,
+                    city_name=city,
+                    country_code=country,
+                    min_star=min_stars,
+                    max_star=max_stars,
+                    limit=limit,
+                    currency=currency,
+                    nationality=guest_nat,
+                ) or []
+                fh_hotels = fh_hotels[:fh_top_n]
+
+                if best_flight:
+                    raw = getattr(best_flight, "price_raw", "") or ""
+                    if "$" in raw or getattr(best_flight, "currency", "") == "USD":
+                        try:
+                            flight_price_krw = int(float(best_flight.price_value) * USD_TO_KRW)
+                        except Exception:
+                            flight_price_krw = None
+                    else:
+                        try:
+                            flight_price_krw = int(float(best_flight.price_value))
+                        except Exception:
+                            flight_price_krw = None
+
+                if fh_hotels:
+                    combo_hotel = fh_hotels[0]
+                    if flight_price_krw is not None:
+                        try:
+                            combined_total = int(flight_price_krw) + int(combo_hotel.total_price)
+                        except Exception:
+                            combined_total = None
 
             elif mode == "flight_hotel_month":
                 best_flight = find_cheapest_flight_in_month(
@@ -361,11 +459,20 @@ def travel():
                 )
 
                 if best_flight:
-                    ci = best_flight.depart_date
-                    if best_flight.return_date:
-                        co = best_flight.return_date
+                    raw = getattr(best_flight, "price_raw", "") or ""
+                    if "$" in raw or getattr(best_flight, "currency", "") == "USD":
+                        try:
+                            flight_price_krw = int(float(best_flight.price_value) * USD_TO_KRW)
+                        except Exception:
+                            flight_price_krw = None
                     else:
-                        co = ci + timedelta(days=nights)
+                        try:
+                            flight_price_krw = int(float(best_flight.price_value))
+                        except Exception:
+                            flight_price_krw = None
+
+                    ci = best_flight.depart_date
+                    co = best_flight.return_date if best_flight.return_date else (ci + timedelta(days=nights))
 
                     fh_hotels = search_hotels_for_dates(
                         checkin=ci,
@@ -377,57 +484,60 @@ def travel():
                         limit=limit,
                         currency=currency,
                         nationality=guest_nat,
-                    )
-                    if fh_hotels:
-                        fh_hotels = fh_hotels[:fh_top_n]
+                    ) or []
+                    fh_hotels = fh_hotels[:fh_top_n]
 
+                    if fh_hotels:
                         combo_hotel = fh_hotels[0]
-                        try:
-                            combined_total = float(best_flight.price_value) + float(
-                                combo_hotel.total_price
-                            )
-                        except Exception:
-                            combined_total = None
+                        if flight_price_krw is not None:
+                            try:
+                                combined_total = int(flight_price_krw) + int(combo_hotel.total_price)
+                            except Exception:
+                                combined_total = None
 
         except Exception as e:
-            error = str(e)
+            error = f"{type(e).__name__}: {e}"
 
     return render_template(
-    "travel.html",
-    title="여행툴",
-    mode=mode,
-    city=city,
-    country=country,
-    adults=adults,
-    min_stars=min_stars,
-    max_stars=max_stars,
-    currency=currency,
-    guest_nat=guest_nat,
-    checkin=checkin,
-    checkout=checkout,
-    top_n=top_n,
-    limit=limit,
-    year=year,
-    month=month,
-    nights=nights,
-    origin=origin,
-    dest=dest,
-    trip=trip,
-    seat=seat,
-    flight_adults=flight_adults,
-    fh_top_n=fh_top_n,
-    error=error,
-    period_rows=period_rows,
-    monthly_results=monthly_results,
-    hotel_cheapest=hotel_cheapest,
-    best_flight=best_flight,
-    fh_hotels=fh_hotels,
-    combined_total=combined_total,
-    combo_hotel=combo_hotel,
-)
-
+        "travel.html",
+        # mode / inputs
+        mode=mode,
+        city=city,
+        country=country,
+        adults=adults,
+        min_stars=min_stars,
+        max_stars=max_stars,
+        currency=currency,
+        guest_nat=guest_nat,
+        checkin=checkin_s,
+        checkout=checkout_s,
+        top_n=top_n,
+        limit=limit,
+        year=year,
+        month=month,
+        nights=nights,
+        origin=origin,
+        dest=dest,
+        trip=trip,
+        seat=seat,
+        flight_adults=flight_adults,
+        fh_top_n=fh_top_n,
+        # results
+        period_rows=period_rows,
+        monthly_results=monthly_results,
+        hotel_cheapest=hotel_cheapest,
+        best_flight=best_flight,
+        fh_hotels=fh_hotels,
+        combo_hotel=combo_hotel,
+        flight_price_krw=flight_price_krw,
+        combined_total=combined_total,
+        error=error,
+        # access key hint
+        has_access_key=bool(ACCESS_KEY),
+        current_key=request.args.get("key") or request.form.get("key") or "",
+    )
 
 
 if __name__ == "__main__":
-    # Render 등 배포환경에서는 gunicorn이 실행함
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=True)
+

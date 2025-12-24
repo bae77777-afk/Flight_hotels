@@ -291,3 +291,56 @@ td.num{ text-align:right; font-variant-numeric: tabular-nums; }
   .hero h1{ font-size: 36px; }
 }
 
+/* ---- index hero-right card polish ---- */
+.card.glass{
+  background: linear-gradient(180deg, #ffffff, #fafbff);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.card-title{
+  font-weight: 900;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.card-desc .row{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.card-desc .row:last-child{
+  border-bottom: 0;
+}
+
+.mini-kpis{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:10px;
+  margin-top: 12px;
+}
+
+.kpi{
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+}
+
+.kpi-num{
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.kpi-label{
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+@media (max-width: 980px){
+  .mini-kpis{ grid-template-columns: 1fr; }
+}
