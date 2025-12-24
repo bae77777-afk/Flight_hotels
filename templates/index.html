@@ -1,194 +1,142 @@
 {% extends "base.html" %}
-{% block content %}
+{% set title = "소개" %}
+{% set active = "home" %}
 
+{% block content %}
 <section class="hero">
   <div class="hero-left">
-    <div class="badge">Portfolio • Finance & Automation</div>
-    <h1>
-      배종훈<br/>
-      Bae Jonghun</h1>
+    <div class="badge">Portfolio · Projects · Travel Tool</div>
+    <h1>데이터를 정리하고, 편리함이란 가치를 창출하고 싶습니다.</h1>
     <p class="lead">
-      회계/재무 기반의 분석 역량과 파이썬 코딩 능력을 바탕으로 다양한 프로젝트를 만들어 보고 있습니다. 
+      자동화 도구를 만들고, 반복 업무를 줄이는 걸 좋아합니다.
+      아래는 현재 운영 중인 여행 최저가 툴과 프로젝트 정리입니다.
     </p>
 
     <div class="hero-actions">
-      <a class="btn" href="/travel">여행툴 보러가기</a>
-      <a class="btn ghost" href="#projects">프로젝트</a>
-      <a class="btn ghost" href="#about">About</a>
+      <a class="btn" href="{{ url_for('travel') }}">여행툴 열기</a>
+      <a class="btn ghost" href="#contact">연락하기</a>
     </div>
 
     <div class="chips">
-      <span class="chip">Python</span>
-      <span class="chip">Finance / Accounting</span>
-      <span class="chip">Excel / Automation</span>
-      <span class="chip">Creative Thinking</span>
+      <span class="chip blue">Python</span>
+      <span class="chip">Excel</span>
+      <span class="chip">Automation</span>
+      <span class="chip">Finance</span>
     </div>
   </div>
 
   <div class="hero-right">
-    <div class="card glass">
+    <div class="card">
       <div class="card-title">사이트 구성</div>
-      <div class="card-desc">
-        <div class="row"><span class="muted">소개</span><span>/</span></div>
-        <div class="row"><span class="muted">여행툴</span><span>/travel</span></div>
+
+      <div class="rows">
+        <div class="row">
+          <span class="muted">소개</span>
+          <span class="pill">/</span>
+        </div>
+        <div class="row">
+          <span class="muted">여행툴</span>
+          <span class="pill">/travel</span>
+        </div>
       </div>
+
       <div class="mini-kpis">
         <div class="kpi">
           <div class="kpi-num">소개</div>
-          <div class="kpi-label">About Me</div>
+          <div class="kpi-label">간단한 자기 소개</div>
         </div>
         <div class="kpi">
-          <div class="kpi-num">여행 최저가</div>
-          <div class="kpi-label">항공 + 호텔 최저가 웹툴</div>
+          <div class="kpi-num">프로젝트</div>
+          <div class="kpi-label">작업물 정리</div>
         </div>
         <div class="kpi">
           <div class="kpi-num">Contact</div>
-          <div class="kpi-label">연락주세요</div>
+          <div class="kpi-label">메일/깃허브</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="about" class="section">
+<section class="section">
   <div class="section-head">
-    <h2>About</h2>
-    <p class="muted">“무엇을, 왜, 어떻게”</p>
+    <h2>프로젝트</h2>
+    <p class="muted">현재 레포/작업물 중심으로 카드 형태로 정리</p>
+  </div>
+
+  <div class="cards">
+    <article class="card project">
+      <div class="project-top">
+        <div class="project-title">항공 + 호텔 최저가 웹툴</div>
+        <span class="tag">LIVE</span>
+      </div>
+      <p class="project-desc">
+        여행기간/한달 스캔 기반으로 최저가 조합을 찾는 도구.
+      </p>
+      <div class="project-meta">
+        <span class="pill">Flask</span>
+        <span class="pill">API</span>
+        <span class="pill">HTML/CSS</span>
+      </div>
+      <div class="project-actions">
+        <a class="btn" href="{{ url_for('travel') }}">열기</a>
+      </div>
+    </article>
+
+    <article class="card project">
+      <div class="project-top">
+        <div class="project-title">자동화/데이터 정리</div>
+        <span class="tag ghost">WIP</span>
+      </div>
+      <p class="project-desc">
+        반복 작업을 줄이기 위한 스크립트/정리 작업들.
+      </p>
+      <div class="project-meta">
+        <span class="pill">Python</span>
+        <span class="pill">Sheets</span>
+      </div>
+    </article>
+
+    <article class="card project">
+      <div class="project-top">
+        <div class="project-title">기타</div>
+        <span class="tag ghost">TODO</span>
+      </div>
+      <p class="project-desc">
+        추가 예정(원하는 섹션: 이력/스킬/경험 등).
+      </p>
+      <div class="project-meta">
+        <span class="pill">Portfolio</span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="contact">
+  <div class="section-head">
+    <h2>Contact</h2>
+    <p class="muted"></p>
   </div>
 
   <div class="grid2">
     <div class="card">
-      <h3>What I do</h3>
-      <ul class="list">
-        <li>데이터 정리 및 분석</li>
-        <li>반복 검색 업무 자동화(스크립트/엑셀/간단 웹앱)</li>
-        <li>결과를 “소비자가 보기 편하게" 제공</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h3>How I work</h3>
-      <ul class="list">
-        <li>요구사항을 입력/출력 기준으로 쪼개서 설계</li>
-        <li>작게 만들고, 빠르게 써보며 개선(반복)</li>
-        <li>Ai를 활용한 피드백 지속</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section id="projects" class="section">
-  <div class="section-head">
-    <h2>Projects</h2>
-    <p class="muted">작동하는 결과물 중심</p>
-  </div>
-
-  <div class="cards">
-    <a class="card project" href="/travel">
-      <div class="project-top">
-        <div class="project-title">호텔 + 항공 최저가 검색 툴</div>
-        <div class="tag">Live</div>
-      </div>
-      <div class="project-desc">
-        한 달 최저가 항공을 찾고, 일정에 맞춰 호텔을 검색해 결과를 정리합니다.
-      </div>
-      <div class="project-meta">
-        <span class="pill">Flask</span>
-        <span class="pill">API</span>
-        <span class="pill">Automation</span>
-      </div>
-    </a>
-
-    <div class="card project">
-      <div class="project-top">
-        <div class="project-title">재무/회계 자동화 (예정)</div>
-        <div class="tag ghost">Coming</div>
-      </div>
-      <div class="project-desc">
-        엑셀/데이터 정리 자동화 등 업무 효율화 작업을 확장 예정.
-      </div>
-      <div class="project-meta">
-        <span class="pill">Excel</span>
-        <span class="pill">Python</span>
-        <span class="pill">Reporting</span>
-      </div>
-    </div>
-
-    <div class="card project">
-      <div class="project-top">
-        <div class="project-title">생활습관 개선 앱 개발 (예정)</div>
-        <div class="tag ghost">Coming</div>
-      </div>
-      <div class="project-desc">
-        앱 사용 및 헬스 데이터를 활용한 생활습관 개선 앱 개발 예정.
-      </div>
-      <div class="project-meta">
-        <span class="pill">Statistics</span>
-        <span class="pill">Application</span>
-        <span class="pill">Visualization</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="skills" class="section">
-  <div class="section-head">
-    <h2>Skills</h2>
-    <p class="muted">필요한 것 위주로 계속 업데이트</p>
-  </div>
-
-  <div class="grid3">
-    <div class="card">
-      <h3>Dev</h3>
-      <div class="skill">
-        <span>Python</span><span class="muted">웹/자동화</span>
-      </div>
-      <div class="skill">
-        <span>API 연동</span><span class="muted">데이터 수집</span>
-      </div>
-      <div class="skill">
-        <span>배포</span><span class="muted">Render</span>
+      <div class="card-title">빠른 연락</div>
+      <p class="muted">메일/깃허브</p>
+      <div class="hero-actions">
+        <a class="btn ghost" href="mailto:hoongora@naver.com">Email</a>
+        <a class="btn ghost" href="https://github.com/bae77777-afk" target="_blank" rel="noopener">GitHub</a>
       </div>
     </div>
 
     <div class="card">
-      <h3>Certifications</h3>
-      <div class="skill"><span>OA</span><span class="muted">Excel, Powerpoint, 컴활 1급</span></div>
-      <div class="skill"><span>Accounting</span><span class="muted">재경관리사, 전산세무 2급</span></div>
-      <div class="skill"><span>English</span><span class="muted">TOEIC Speaking IH(150)</span></div>
-    </div>
-
-    <div class="card">
-      <h3>Business</h3>
-      <div class="skill"><span>회계/재무</span><span class="muted">기본기</span></div>
-      <div class="skill"><span>기획</span><span class="muted">데이터 분석</span></div>
-      <div class="skill"><span>마케팅</span><span class="muted">원인-대안</span></div>
-    </div>
-  </div>
-</section>
-
-<section id="contact" class="section">
-  <div class="section-head">
-    <h2>Contact</h2>
-    <p class="muted">hoongora@gmail.com</p>
-  </div>
-
-  <div class="card">
-    <div class="contact-grid">
-      <div>
-        <div class="muted">Email</div>
-        <div class="contact-item">hoongora@gmail.com</div>
-      </div>
-      <div>
-        <div class="muted">GitHub</div>
-        <div class="contact-item">github.com/bae77777-afk</div>
-      </div>
-      <div>
-        <div class="muted">Resume</div>
-        <div class="contact-item">예정</div>
+      <div class="card-title">한 줄 소개</div>
+      <p class="muted">회계 분야 전문성을 가지고 간단한 개발을 취미로 하고 있어요.</p>
+      <div class="chips">
+        <span class="chip blue">꼼꼼함</span>
+        <span class="chip">자동화</span>
+        <span class="chip">실무지향</span>
       </div>
     </div>
   </div>
 </section>
-
 {% endblock %}
