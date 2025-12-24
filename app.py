@@ -49,7 +49,7 @@ def _gatekeeper():
 # Intro
 # -----------------------------
 @app.get("/")
-def index():
+def home():
     return render_template("index.html", title="소개")
 
 
