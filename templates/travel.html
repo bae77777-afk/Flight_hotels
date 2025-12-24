@@ -210,30 +210,58 @@
 
         <fieldset>
           <legend>호텔 공통 설정</legend>
+
           <div class="grid3">
-            <label>도시 <input name="city" value="{{ city }}"></label>
-            <label>국가코드 <input name="country" value="{{ country }}" size="4"></label>
-            <label>성인 인원수 <input name="adults" value="{{ adults }}" size="3"></label>
+            <label>도시 (cityName)
+              <input name="city" value="{{ city }}">
+            </label>
+
+            <label>국가코드 (countryCode)
+              <input name="country" value="{{ country }}">
+            </label>
+
+            <label>성인 인원수
+              <input name="adults" value="{{ adults }}">
+            </label>
           </div>
-          <div class="grid3">
-            <label>최소 성급 <input name="min_stars" value="{{ min_stars }}" size="3"></label>
-            <label>최대 성급 <input name="max_stars" value="{{ max_stars }}" size="3"></label>
-            <label>통화 <input name="currency" value="{{ currency }}" size="5"></label>
+
+          <div class="grid4" style="margin-top:12px;">
+            <label>최소 성급
+              <input name="min_stars" value="{{ min_stars }}">
+            </label>
+
+            <label>최대 성급
+              <input name="max_stars" value="{{ max_stars }}">
+            </label>
+
+            <label>통화
+              <input name="currency" value="{{ currency }}">
+            </label>
+
+            <label>국적
+              <input name="guest_nat" value="{{ guest_nat }}">
+            </label>
           </div>
-          <label>국적 <input name="guest_nat" value="{{ guest_nat }}" size="4"></label>
         </fieldset>
 
-        <fieldset id="fs-period">
+        <fieldset>
           <legend>여행기간 입력</legend>
-          <div class="grid2">
-            <label>체크인 <input name="checkin" value="{{ checkin }}" placeholder="YYYY-MM-DD"></label>
-            <label>체크아웃 <input name="checkout" value="{{ checkout }}" placeholder="YYYY-MM-DD"></label>
-          </div>
-          <div class="grid2">
-            <label>Top N <input name="top_n" value="{{ top_n }}" size="3"></label>
-            <label>Limit <input name="limit" value="{{ limit }}" size="4"></label>
+          <div class="grid4">
+            <label>체크인
+              <input name="checkin" value="{{ checkin }}">
+            </label>
+            <label>체크아웃
+              <input name="checkout" value="{{ checkout }}">
+            </label>
+            <label>Top N
+              <input name="top_n" value="{{ top_n }}">
+            </label>
+            <label>Limit
+              <input name="limit" value="{{ limit }}">
+            </label>
           </div>
         </fieldset>
+
 
         <fieldset id="fs-month">
           <legend>한달 스캔 입력</legend>

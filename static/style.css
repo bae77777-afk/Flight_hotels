@@ -249,3 +249,26 @@ td.num{ text-align:right; font-variant-numeric: tabular-nums; }
   .hero h1{ font-size: 36px; }
 }
 
+/* ---- travel form alignment fix ---- */
+.form fieldset { margin: 14px 0; }
+
+.form .grid2 { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
+.form .grid3 { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
+.form .grid4 { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; }
+
+.form label{
+  margin: 0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width: 0;         /* 긴 글자 때문에 칸 깨지는 거 방지 */
+}
+
+.form input, .form select{
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 980px){
+  .form .grid2, .form .grid3, .form .grid4{ grid-template-columns: 1fr; }
+}
