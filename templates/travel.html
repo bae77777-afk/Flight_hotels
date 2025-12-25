@@ -244,7 +244,7 @@
           </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset id="fs-period">
           <legend>여행기간 입력</legend>
           <div class="grid4">
             <label>체크인
@@ -469,11 +469,15 @@
       const fsMonth  = document.getElementById("fs-month");
       const fsFlight = document.getElementById("fs-flight");
 
+      // 안전장치: 템플릿 구조가 바뀌어도 JS가 죽지 않게
+      if (!fsMonth || !fsFlight || !fsPeriod) return;
+
       // 기본 숨김
       fsPeriod.classList.add("hidden");
       fsMonth.classList.add("hidden");
       fsFlight.classList.add("hidden");
 
+      // 모드별로 필요한 것만 노출
       if (mode === "hotel_period"){
         fsPeriod.classList.remove("hidden");
       } else if (mode === "hotel_month"){
@@ -486,6 +490,8 @@
         fsFlight.classList.remove("hidden");
       }
     }
+
+    
 
     const radios = document.querySelectorAll("input[name='mode']");
     radios.forEach(r => r.addEventListener("change", e => toggleFieldsets(e.target.value)));
