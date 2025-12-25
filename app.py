@@ -420,6 +420,7 @@ def travel():
                     checkout=checkout,
                     city_name=city,
                     country_code=country,
+                    adults=adults,  
                     min_star=min_stars,
                     max_star=max_stars,
                     limit=limit,
