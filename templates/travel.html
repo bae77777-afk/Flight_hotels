@@ -134,7 +134,88 @@
       .hero{grid-template-columns:1fr;}
       .grid2,.grid3{grid-template-columns:1fr;}
     }
-  </style>
+  
+
+    /* ===== Autocomplete / Catalog ===== */
+    .input-with-btn{ display:flex; gap:8px; align-items:center; }
+    .btn.mini{ padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; }
+    .code-help{ margin-top:6px; color: var(--muted); font-size:12px; line-height:1.35; }
+
+    /* Modal */
+    .modal-overlay{
+      position:fixed; inset:0; background: rgba(8,20,40,.35);
+      display:flex; align-items:center; justify-content:center;
+      padding: 18px;
+      z-index: 9999;
+    }
+    .modal{
+      width: min(920px, 100%);
+      background: #fff;
+      border: 1px solid var(--line, #e3ebf7);
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(10,25,60,.18);
+      overflow:hidden;
+    }
+    .modal-head{
+      display:flex; align-items:center; gap:10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line, #e3ebf7);
+      background: linear-gradient(180deg, #f3f8ff, #ffffff);
+    }
+    .modal-title{ font-weight:950; }
+    .modal-close{ margin-left:auto; }
+    .modal-body{ padding: 12px 16px 16px; }
+    .modal-tabs{
+      display:flex; gap:8px; padding: 6px;
+      border: 1px solid var(--line, #e3ebf7);
+      border-radius: 999px;
+      background: rgba(245,248,255,.8);
+      width: fit-content;
+    }
+    .modal-tab{
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor:pointer;
+      color: var(--muted, #5b6b80);
+    }
+    .modal-tab.active{
+      background: rgba(7,112,227,.10);
+      border-color: rgba(7,112,227,.22);
+      color: #0770e3;
+    }
+    .catalog-search{ display:flex; gap:10px; margin-top: 12px; }
+    .catalog-search input{
+      flex:1;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line, #e3ebf7);
+      background: #f7fbff;
+    }
+    .catalog-table{
+      margin-top: 12px;
+      border: 1px solid var(--line, #e3ebf7);
+      border-radius: 14px;
+      overflow:auto;
+      max-height: 420px;
+    }
+    .catalog-table table{ width:100%; border-collapse:collapse; min-width: 640px; }
+    .catalog-table th, .catalog-table td{
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--line, #e3ebf7);
+      font-size: 13px;
+    }
+    .catalog-table th{
+      position: sticky; top:0; z-index:1;
+      background: linear-gradient(180deg, #f3f8ff, #eaf2ff);
+      color: #24415f;
+      text-align:left;
+    }
+    .catalog-table tr:hover td{ background: rgba(7,112,227,.04); cursor:pointer; }
+
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -217,7 +298,11 @@
             </label>
 
             <label>국가코드 (countryCode)
-              <input name="country" value="{{ country }}">
+              <div class="input-with-btn">
+                <input name="country" id="country" list="country-list" value="{{ country }}" placeholder="예: KR">
+                <button type="button" class="btn ghost mini" onclick="openCatalog('country','country')">찾기</button>
+              </div>
+              <div class="code-help">국가 2자리 코드(ISO). 예: KR(한국), JP(일본), US(미국) — 아래 목록에서 검색해서 바로 넣을 수 있어.</div>
             </label>
 
             <label>성인 인원수
@@ -244,7 +329,7 @@
           </div>
         </fieldset>
 
-        <fieldset id="fs-period">
+        <fieldset>
           <legend>여행기간 입력</legend>
           <div class="grid4">
             <label>체크인
@@ -275,8 +360,19 @@
         <fieldset id="fs-flight">
           <legend>항공 설정 (항공+호텔 모드에서 사용)</legend>
           <div class="grid3">
-            <label>출발(IATA) <input name="origin" value="{{ origin }}" size="5"></label>
-            <label>도착(IATA) <input name="dest" value="{{ dest }}" size="5"></label>
+            <label>출발(IATA)
+              <div class="input-with-btn">
+                <input name="origin" id="origin" list="airport-list" value="{{ origin }}" placeholder="예: ICN" size="8">
+                <button type="button" class="btn ghost mini" onclick="openCatalog('airport','origin')">찾기</button>
+              </div>
+              <div class="code-help">예: ICN(인천), GMP(김포), NRT(도쿄 나리타)… 검색해서 바로 입력 가능.</div>
+            </label>
+            <label>도착(IATA)
+              <div class="input-with-btn">
+                <input name="dest" id="dest" list="airport-list" value="{{ dest }}" placeholder="예: NRT" size="8">
+                <button type="button" class="btn ghost mini" onclick="openCatalog('airport','dest')">찾기</button>
+              </div>
+            </label>
             <label>항공 인원 <input name="flight_adults" value="{{ flight_adults }}" size="3"></label>
           </div>
           <div class="grid3">
@@ -302,7 +398,9 @@
         </fieldset>
 
         <button class="btn" type="submit">검색하기</button>
-      </form>
+        <datalist id="country-list"></datalist>
+  <datalist id="airport-list"></datalist>
+</form>
 
       {% if error %}
         <div class="error" style="margin-top:12px;">에러: {{ error }}</div>
@@ -463,16 +561,49 @@
     </div>
   </div>
 
-  <script>
+  
+  <!-- ===== 코드 카탈로그(국가/IATA) ===== -->
+  <div id="catalogOverlay" class="modal-overlay hidden" onclick="closeCatalogOnOverlay(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="catalogTitle" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div class="modal-title" id="catalogTitle">코드 찾기</div>
+        <button type="button" class="btn subtle mini modal-close" onclick="closeCatalog()">닫기</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-tabs">
+          <button type="button" id="tab-airport" class="modal-tab" onclick="switchCatalog('airport')">공항 IATA</button>
+          <button type="button" id="tab-country" class="modal-tab" onclick="switchCatalog('country')">국가 코드</button>
+        </div>
+
+        <div class="catalog-search">
+          <input id="catalogQuery" placeholder="검색: 코드 / 도시 / 공항명 / 국가명 (예: ICN, Seoul, Incheon, KR)" oninput="renderCatalog()">
+          <button type="button" class="btn mini" onclick="applyFirstMatch()">첫 결과 선택</button>
+        </div>
+
+        <div class="catalog-table">
+          <table>
+            <thead>
+              <tr id="catalogHeadRow"></tr>
+            </thead>
+            <tbody id="catalogBody"></tbody>
+          </table>
+        </div>
+
+        <div class="code-help">행을 클릭하면 선택한 입력칸에 코드가 자동으로 들어가.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+    // ===== (1) 모드별 입력칸 토글 =====
     function toggleFieldsets(mode){
       const fsPeriod = document.getElementById("fs-period");
       const fsMonth  = document.getElementById("fs-month");
       const fsFlight = document.getElementById("fs-flight");
 
-      // 안전장치: 템플릿 구조가 바뀌어도 JS가 죽지 않게
       if (!fsMonth || !fsFlight || !fsPeriod) return;
 
-      // 기본 숨김
       fsPeriod.classList.add("hidden");
       fsMonth.classList.add("hidden");
       fsFlight.classList.add("hidden");
@@ -491,13 +622,304 @@
       }
     }
 
-    
-
     const radios = document.querySelectorAll("input[name='mode']");
     radios.forEach(r => r.addEventListener("change", e => toggleFieldsets(e.target.value)));
-    // 초기 로딩
-    toggleFieldsets("{{ mode }}");
-  </script>
+
+    // ===== (2) 코드 자동완성 (Datalist) =====
+    // ※ 전체 국가/공항 DB를 다 넣기엔 너무 커서, 자주 쓰는 것 위주로 넣고
+    //    필요하면 목록을 더 늘리거나(업데이트), 서버 엔드포인트로 검색형으로 확장 가능.
+
+    const COUNTRIES = [
+      { code:"KR", name:"Korea (South)" },
+      { code:"JP", name:"Japan" },
+      { code:"CN", name:"China" },
+      { code:"TW", name:"Taiwan" },
+      { code:"HK", name:"Hong Kong" },
+      { code:"SG", name:"Singapore" },
+      { code:"TH", name:"Thailand" },
+      { code:"VN", name:"Vietnam" },
+      { code:"MY", name:"Malaysia" },
+      { code:"PH", name:"Philippines" },
+      { code:"ID", name:"Indonesia" },
+      { code:"IN", name:"India" },
+      { code:"AE", name:"United Arab Emirates" },
+      { code:"SA", name:"Saudi Arabia" },
+      { code:"TR", name:"Turkey" },
+      { code:"GB", name:"United Kingdom" },
+      { code:"FR", name:"France" },
+      { code:"DE", name:"Germany" },
+      { code:"IT", name:"Italy" },
+      { code:"ES", name:"Spain" },
+      { code:"NL", name:"Netherlands" },
+      { code:"CH", name:"Switzerland" },
+      { code:"SE", name:"Sweden" },
+      { code:"NO", name:"Norway" },
+      { code:"DK", name:"Denmark" },
+      { code:"FI", name:"Finland" },
+      { code:"AU", name:"Australia" },
+      { code:"NZ", name:"New Zealand" },
+      { code:"US", name:"United States" },
+      { code:"CA", name:"Canada" },
+      { code:"MX", name:"Mexico" },
+      { code:"BR", name:"Brazil" },
+      { code:"AR", name:"Argentina" },
+      { code:"CL", name:"Chile" },
+      { code:"PE", name:"Peru" },
+      { code:"CO", name:"Colombia" }
+    ];
+
+    const AIRPORTS = [
+      // Korea
+      { code:"ICN", city:"Seoul", name:"Incheon International", country:"KR" },
+      { code:"GMP", city:"Seoul", name:"Gimpo", country:"KR" },
+      { code:"PUS", city:"Busan", name:"Gimhae", country:"KR" },
+      { code:"CJU", city:"Jeju", name:"Jeju International", country:"KR" },
+      { code:"TAE", city:"Daegu", name:"Daegu International", country:"KR" },
+      { code:"CJJ", city:"Cheongju", name:"Cheongju", country:"KR" },
+      { code:"RSU", city:"Yeosu", name:"Yeosu", country:"KR" },
+
+      // Japan
+      { code:"NRT", city:"Tokyo", name:"Narita", country:"JP" },
+      { code:"HND", city:"Tokyo", name:"Haneda", country:"JP" },
+      { code:"KIX", city:"Osaka", name:"Kansai", country:"JP" },
+      { code:"ITM", city:"Osaka", name:"Itami", country:"JP" },
+      { code:"NGO", city:"Nagoya", name:"Chubu Centrair", country:"JP" },
+      { code:"CTS", city:"Sapporo", name:"New Chitose", country:"JP" },
+      { code:"FUK", city:"Fukuoka", name:"Fukuoka", country:"JP" },
+      { code:"OKA", city:"Okinawa", name:"Naha", country:"JP" },
+
+      // China / HK / TW
+      { code:"PEK", city:"Beijing", name:"Capital", country:"CN" },
+      { code:"PKX", city:"Beijing", name:"Daxing", country:"CN" },
+      { code:"PVG", city:"Shanghai", name:"Pudong", country:"CN" },
+      { code:"SHA", city:"Shanghai", name:"Hongqiao", country:"CN" },
+      { code:"CAN", city:"Guangzhou", name:"Baiyun", country:"CN" },
+      { code:"SZX", city:"Shenzhen", name:"Bao'an", country:"CN" },
+      { code:"HKG", city:"Hong Kong", name:"Hong Kong Intl", country:"HK" },
+      { code:"TPE", city:"Taipei", name:"Taoyuan", country:"TW" },
+      { code:"TSA", city:"Taipei", name:"Songshan", country:"TW" },
+
+      // SE Asia
+      { code:"BKK", city:"Bangkok", name:"Suvarnabhumi", country:"TH" },
+      { code:"DMK", city:"Bangkok", name:"Don Mueang", country:"TH" },
+      { code:"SIN", city:"Singapore", name:"Changi", country:"SG" },
+      { code:"KUL", city:"Kuala Lumpur", name:"Kuala Lumpur Intl", country:"MY" },
+      { code:"HAN", city:"Hanoi", name:"Noi Bai", country:"VN" },
+      { code:"SGN", city:"Ho Chi Minh City", name:"Tan Son Nhat", country:"VN" },
+      { code:"DAD", city:"Da Nang", name:"Da Nang Intl", country:"VN" },
+      { code:"MNL", city:"Manila", name:"Ninoy Aquino", country:"PH" },
+      { code:"CEB", city:"Cebu", name:"Mactan–Cebu", country:"PH" },
+      { code:"DPS", city:"Bali", name:"Ngurah Rai", country:"ID" },
+
+      // Middle East
+      { code:"DXB", city:"Dubai", name:"Dubai Intl", country:"AE" },
+      { code:"AUH", city:"Abu Dhabi", name:"Zayed Intl", country:"AE" },
+      { code:"DOH", city:"Doha", name:"Hamad Intl", country:"QA" },
+
+      // Europe
+      { code:"LHR", city:"London", name:"Heathrow", country:"GB" },
+      { code:"LGW", city:"London", name:"Gatwick", country:"GB" },
+      { code:"CDG", city:"Paris", name:"Charles de Gaulle", country:"FR" },
+      { code:"ORY", city:"Paris", name:"Orly", country:"FR" },
+      { code:"FRA", city:"Frankfurt", name:"Frankfurt", country:"DE" },
+      { code:"MUC", city:"Munich", name:"Munich", country:"DE" },
+      { code:"AMS", city:"Amsterdam", name:"Schiphol", country:"NL" },
+      { code:"FCO", city:"Rome", name:"Fiumicino", country:"IT" },
+      { code:"MAD", city:"Madrid", name:"Barajas", country:"ES" },
+      { code:"BCN", city:"Barcelona", name:"El Prat", country:"ES" },
+      { code:"IST", city:"Istanbul", name:"Istanbul", country:"TR" },
+      { code:"ZRH", city:"Zurich", name:"Zurich", country:"CH" },
+
+      // USA / Canada
+      { code:"JFK", city:"New York", name:"John F. Kennedy", country:"US" },
+      { code:"LGA", city:"New York", name:"LaGuardia", country:"US" },
+      { code:"EWR", city:"Newark", name:"Newark Liberty", country:"US" },
+      { code:"LAX", city:"Los Angeles", name:"Los Angeles Intl", country:"US" },
+      { code:"SFO", city:"San Francisco", name:"San Francisco Intl", country:"US" },
+      { code:"SEA", city:"Seattle", name:"Seattle–Tacoma", country:"US" },
+      { code:"ORD", city:"Chicago", name:"O'Hare", country:"US" },
+      { code:"DFW", city:"Dallas", name:"Dallas/Fort Worth", country:"US" },
+      { code:"YYZ", city:"Toronto", name:"Pearson", country:"CA" },
+      { code:"YVR", city:"Vancouver", name:"Vancouver Intl", country:"CA" }
+    ];
+
+    function fillDatalist(id, rows, formatter){
+      const dl = document.getElementById(id);
+      if (!dl) return;
+      dl.innerHTML = "";
+      rows.forEach(r => {
+        const opt = document.createElement("option");
+        opt.value = formatter(r);
+        dl.appendChild(opt);
+      });
+    }
+
+    function normalizeCodeInput(el){
+      if (!el) return;
+      const v = (el.value || "").trim();
+      const parts = v.split(" - ");
+      if (parts.length >= 2) el.value = parts[0].trim();
+    }
+
+    // ===== (3) 카탈로그 모달 =====
+    let catalogMode = "airport";   // 'airport' | 'country'
+    let catalogTargetId = null;    // input id to fill
+
+    function openCatalog(mode, targetId){
+      catalogMode = mode;
+      catalogTargetId = targetId;
+
+      const overlay = document.getElementById("catalogOverlay");
+      if (!overlay) return;
+      overlay.classList.remove("hidden");
+
+      // 탭 상태
+      switchCatalog(mode);
+
+      const q = document.getElementById("catalogQuery");
+      if (q){
+        q.value = "";
+        q.focus();
+      }
+      renderCatalog();
+    }
+
+    function closeCatalog(){
+      const overlay = document.getElementById("catalogOverlay");
+      if (!overlay) return;
+      overlay.classList.add("hidden");
+      catalogTargetId = null;
+    }
+
+    function closeCatalogOnOverlay(e){
+      // overlay 클릭 시 닫기
+      if (e.target && e.target.id === "catalogOverlay") closeCatalog();
+    }
+
+    function switchCatalog(mode){
+      catalogMode = mode;
+      const tabA = document.getElementById("tab-airport");
+      const tabC = document.getElementById("tab-country");
+      if (tabA && tabC){
+        tabA.classList.toggle("active", mode === "airport");
+        tabC.classList.toggle("active", mode === "country");
+      }
+      renderCatalogHead();
+      renderCatalog();
+    }
+
+    function renderCatalogHead(){
+      const head = document.getElementById("catalogHeadRow");
+      if (!head) return;
+
+      if (catalogMode === "airport"){
+        head.innerHTML = "<th>코드</th><th>도시</th><th>공항</th><th>국가</th>";
+      } else {
+        head.innerHTML = "<th>코드</th><th>국가명</th>";
+      }
+    }
+
+    function getCatalogQuery(){
+      const q = document.getElementById("catalogQuery");
+      return (q?.value || "").trim().toLowerCase();
+    }
+
+    function renderCatalog(){
+      const body = document.getElementById("catalogBody");
+      if (!body) return;
+      const q = getCatalogQuery();
+
+      let rows = [];
+      if (catalogMode === "airport"){
+        rows = AIRPORTS.filter(a => {
+          if (!q) return true;
+          return (
+            a.code.toLowerCase().includes(q) ||
+            a.city.toLowerCase().includes(q) ||
+            a.name.toLowerCase().includes(q) ||
+            a.country.toLowerCase().includes(q)
+          );
+        }).slice(0, 200);
+
+        body.innerHTML = rows.map(a => `
+          <tr onclick="pickCatalogValue('${a.code}')">
+            <td><b>${a.code}</b></td>
+            <td>${a.city}</td>
+            <td>${a.name}</td>
+            <td>${a.country}</td>
+          </tr>
+        `).join("");
+
+      } else {
+        rows = COUNTRIES.filter(c => {
+          if (!q) return true;
+          return (
+            c.code.toLowerCase().includes(q) ||
+            c.name.toLowerCase().includes(q)
+          );
+        }).slice(0, 200);
+
+        body.innerHTML = rows.map(c => `
+          <tr onclick="pickCatalogValue('${c.code}')">
+            <td><b>${c.code}</b></td>
+            <td>${c.name}</td>
+          </tr>
+        `).join("");
+      }
+    }
+
+    function pickCatalogValue(code){
+      if (!catalogTargetId) return;
+      const el = document.getElementById(catalogTargetId);
+      if (!el) return;
+      el.value = code;
+      closeCatalog();
+    }
+
+    function applyFirstMatch(){
+      const q = getCatalogQuery();
+      if (catalogMode === "airport"){
+        const a = AIRPORTS.find(x =>
+          !q ||
+          x.code.toLowerCase().includes(q) ||
+          x.city.toLowerCase().includes(q) ||
+          x.name.toLowerCase().includes(q) ||
+          x.country.toLowerCase().includes(q)
+        );
+        if (a) pickCatalogValue(a.code);
+      } else {
+        const c = COUNTRIES.find(x => !q || x.code.toLowerCase().includes(q) || x.name.toLowerCase().includes(q));
+        if (c) pickCatalogValue(c.code);
+      }
+    }
+
+    // ===== 초기화 =====
+    document.addEventListener("DOMContentLoaded", () => {
+      // datalist 채우기
+      fillDatalist("country-list", COUNTRIES, c => `${c.code} - ${c.name}`);
+      fillDatalist("airport-list", AIRPORTS, a => `${a.code} - ${a.city} / ${a.name} (${a.country})`);
+
+      // 선택했을 때 코드만 남기기
+      ["country","origin","dest"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("change", () => normalizeCodeInput(el));
+        el.addEventListener("blur", () => normalizeCodeInput(el));
+      });
+
+      // 토글 초기 로딩
+      toggleFieldsets("{{ mode }}");
+      renderCatalogHead();
+
+      // ESC로 닫기
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape"){
+          const overlay = document.getElementById("catalogOverlay");
+          if (overlay && !overlay.classList.contains("hidden")) closeCatalog();
+        }
+      });
+    });
+</script>
 </body>
 </html>
 
