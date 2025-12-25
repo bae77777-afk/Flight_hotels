@@ -371,7 +371,14 @@
               <input type="date" name="checkin" value="{{ checkin }}" required>
             </label>
             <label>체크아웃
-              <input type="date" name="checkout" value="{{ checkout }}" required>
+              <input name="checkout" value="{{ checkout }}">
+            </label>
+            <label>표시 개수
+              <input name="top_n" value="{{ top_n }}">
+            </label>
+            <label>검색 개수
+              <input name="limit" value="{{ limit }}">
+              
             </label>
 </div>
         </fieldset>
@@ -437,7 +444,7 @@
                 <option value="first" {% if seat == 'first' %}selected{% endif %}>First</option>
               </select>
             </label>
-            <label>호텔 TOP N <input name="fh_top_n" value="{{ fh_top_n }}" size="3"></label>
+            <label>호텔 표시 개수 <input name="fh_top_n" value="{{ fh_top_n }}" size="3"></label>
           </div>
           <div class="helper">
             “항공+호텔(여행기간)”은 위의 체크인/체크아웃을 항공 날짜로 그대로 사용해.
