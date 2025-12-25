@@ -1,54 +1,63 @@
 /* =========================
-   Skyscanner-ish Light UI
-   - Soft blue-gray background (less glare)
-   - Navy text (high readability)
-   - Strong blue accent
-   - Clean cards + tidy forms
+   Skyscanner / Trip.com-ish Blue & White UI (Light)
+   - Clean white cards
+   - Soft airy blue background
+   - Strong blue primary action
+   - Subtle borders + modern shadows
    ========================= */
 
 :root{
-  /* Surface */
-  --bg: #f3f6fb;
-  --bg2:#92bdfad3;
-  --card:#92bdfad3;
-  --card2:#f7faff;
+  /* Surfaces */
+  --bg: #f5f8ff;   /* page */
+  --bg2: #eef5ff;   /* subtle depth */
+  --card: #ffffff;   /* primary surface */
+  --card2: #f7fbff;   /* inputs / secondary */
 
   /* Text */
-  --text:#0b1f3b;     /* navy */
-  --muted:#556b84;    /* blue-gray */
-  --muted2:#6b7f95;
+  --text:  #0b1f3b;  /* navy */
+  --muted: #5b6b80;  /* blue-gray */
+  --muted2:#72839a;
 
   /* Lines & shadows */
-  --line:#dbe5f1;
-  --line2:#cfe0f2;
-  --shadow: 0 14px 40px rgba(15,35,75,.10);
-  --shadow2: 0 8px 18px rgba(15,35,75,.08);
-  --radius:18px;
+  --line: #e3ebf7;
+  --line2: #d6e3f6;
+  --shadow:  0 14px 40px rgba(15,35,75,.10);
+  --shadow2: 0 10px 22px rgba(15,35,75,.08);
+  --radius:  18px;
 
-  /* Accent */
-  --accent:#0062e3;      /* Skyscanner-ish blue */
-  --accent2:#00a698;     /* teal helper */
-  --accent-weak: rgba(0,98,227,.10);
-  --accent-line: rgba(0,98,227,.22);
-  --focus: rgba(0,98,227,.16);
+  /* Accent (Skyscanner-ish) */
+  --accent: #0770e3;
+  --accent-dark: #055ec7;
+  --accent-weak: rgba(7,112,227,.10);
+  --accent-line: rgba(7,112,227,.22);
+  --focus: rgba(7,112,227,.18);
+
+  /* Helper */
+  --teal:        #00a9a5;
+  --teal-weak:   rgba(0,169,165,.10);
 
   /* Status */
   --danger:#d93025;
   --danger-weak: rgba(217,48,37,.08);
   --warning:#f59e0b;
-  --success:#00a698;
+  --success: #00a9a5;
+  --accent2: #00a9a5;
 }
 
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
+
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
   color: var(--text);
+
+  /* airy background like travel sites */
   background:
-    radial-gradient(1100px 520px at 15% -10%, rgba(0,98,227,.10), transparent 60%),
-    radial-gradient(900px 460px at 92% 0%, rgba(0,166,152,.08), transparent 55%),
+    radial-gradient(1100px 520px at 15% -10%, rgba(7,112,227,.12), transparent 60%),
+    radial-gradient(900px 460px at 92% 0%, rgba(0,169,165,.10), transparent 55%),
     linear-gradient(180deg, var(--bg), var(--bg2));
+
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -70,7 +79,7 @@ img{ max-width:100%; display:block; }
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(243,246,251,.86);
+  background: rgba(245,248,255,.72);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(10px);
 }
@@ -93,7 +102,7 @@ img{ max-width:100%; display:block; }
   width:10px; height:10px;
   border-radius:999px;
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(0,98,227,.12);
+  box-shadow: 0 0 0 5px rgba(7,112,227,.12);
 }
 
 .tabs{
@@ -103,7 +112,7 @@ img{ max-width:100%; display:block; }
   padding: 4px;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: rgba(255,255,255,.90);
+  background: rgba(255,255,255,.88);
   box-shadow: var(--shadow2);
 }
 .tabs a{
@@ -115,7 +124,7 @@ img{ max-width:100%; display:block; }
 }
 .tabs a:hover{
   color: var(--text);
-  background: rgba(0,98,227,.06);
+  background: rgba(7,112,227,.06);
 }
 .tabs a.active{
   color: var(--accent);
@@ -132,13 +141,13 @@ img{ max-width:100%; display:block; }
   justify-content:center;
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(0,98,227,.35);
-  background: linear-gradient(180deg, #0a6cff, #0057d6);
+  border: 1px solid rgba(7,112,227,.38);
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
   color: #fff;
   font-weight: 900;
   box-shadow: var(--shadow2);
 }
-.btn:hover{ filter: brightness(.99); }
+.btn:hover{ filter: brightness(1.02); }
 .btn:active{ transform: translateY(1px); }
 
 .btn.ghost{
@@ -147,7 +156,7 @@ img{ max-width:100%; display:block; }
   border: 1px solid var(--accent-line);
   box-shadow: none;
 }
-.btn.ghost:hover{ background: rgba(0,98,227,.06); }
+.btn.ghost:hover{ background: rgba(7,112,227,.06); }
 
 .btn.subtle{
   background: rgba(255,255,255,.92);
@@ -171,10 +180,16 @@ img{ max-width:100%; display:block; }
   border-radius: var(--radius);
   padding: 16px;
   box-shadow: var(--shadow2);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.card:hover{
+  transform: translateY(-1px);
+  border-color: rgba(7,112,227,.18);
+  box-shadow: 0 14px 32px rgba(15,35,75,.10);
 }
 
 .card.soft{
-  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
 }
 
 .card-title{
@@ -242,7 +257,7 @@ img{ max-width:100%; display:block; }
   padding: 10px 12px;
   border: 1px dashed var(--line2);
   border-radius: 14px;
-  background: #f6f9ff;
+  background: linear-gradient(180deg, #ffffff, #f7fbff);
 }
 .pill{
   display:inline-flex;
@@ -266,7 +281,7 @@ img{ max-width:100%; display:block; }
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 12px;
-  background: var(--card);
+  background: #fff;
 }
 .kpi-num{ font-weight: 950; margin-bottom: 4px; }
 .kpi-label{ color: var(--muted); font-size: 12px; line-height: 1.35; }
@@ -286,9 +301,9 @@ img{ max-width:100%; display:block; }
   border-radius: 999px;
   font-size: 12px;
   font-weight: 900;
-  background: rgba(0,166,152,.10);
-  border: 1px solid rgba(0,166,152,.18);
-  color: #05756c;
+  background: var(--teal-weak);
+  border: 1px solid rgba(0,169,165,.18);
+  color: #067a77;
 }
 .tag.ghost{
   background: rgba(11,31,59,.04);
@@ -302,7 +317,7 @@ img{ max-width:100%; display:block; }
   border-radius: 16px;
   padding: 14px;
   margin: 12px 0;
-  background: var(--card);
+  background: #fff;
 }
 .form legend{
   padding: 0 8px;
@@ -328,14 +343,16 @@ img{ max-width:100%; display:block; }
   border: 1px solid var(--line);
   background: var(--card2);
   color: var(--text);
+  transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
 }
 
-.form input::placeholder{ color: rgba(85,107,132,.55); }
+.form input::placeholder{ color: rgba(91,107,128,.55); }
 .form input[type="radio"]{ accent-color: var(--accent); }
 
 .form input:focus, .form select:focus{
   outline: 3px solid var(--focus);
-  border-color: rgba(0,98,227,.30);
+  border-color: rgba(7,112,227,.34);
+  background: #fff;
 }
 
 .form .helper{
@@ -361,10 +378,11 @@ img{ max-width:100%; display:block; }
   background: #fff;
   color: var(--muted);
   font-weight: 900;
+  transition: background .12s ease, border-color .12s ease;
 }
 .mode-item:hover{
   border-color: var(--accent-line);
-  background: rgba(0,98,227,.06);
+  background: rgba(7,112,227,.06);
 }
 
 .form-actions{
@@ -389,7 +407,7 @@ img{ max-width:100%; display:block; }
   overflow:auto;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: var(--card);
+  background: #fff;
   box-shadow: var(--shadow2);
 }
 
@@ -408,14 +426,14 @@ th, td{
 th{
   text-align:left;
   color: #24415f;
-  background: linear-gradient(180deg, #f2f7ff, #e8f1ff);
+  background: linear-gradient(180deg, #f3f8ff, #eaf2ff);
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
 tbody tr:hover td{
-  background: rgba(0,98,227,.04);
+  background: rgba(7,112,227,.04);
 }
 
 td.num{
@@ -445,19 +463,19 @@ td.num{
   .hero h1{ font-size: 34px; }
 }
 
-/* ✅ travel submit button: 항상 대비가 나오게 */
+/* ✅ travel submit button: always readable */
 .form button[type="submit"]{
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(0,98,227,.35);
-  background: linear-gradient(180deg, #0a6cff, #0057d6);
+  border: 1px solid rgba(7,112,227,.38);
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
   color: #ffffff !important;
   font-weight: 900;
   box-shadow: var(--shadow2);
   cursor: pointer;
 }
-.form button[type="submit"]:hover{ filter: brightness(.99); }
+.form button[type="submit"]:hover{ filter: brightness(1.02); }
 .form button[type="submit"]:active{ transform: translateY(1px); }
