@@ -29,7 +29,7 @@
     *{box-sizing:border-box}
     body{
       margin:0; background:var(--bg); color:var(--text);
-      font-family: "NanumSquareNeo", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Apple SD Gothic Neo, "Noto Sans KR", sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Apple SD Gothic Neo, "Noto Sans KR", sans-serif;
     }
     a{color:inherit; text-decoration:none}
     .wrap{max-width:1100px; margin:0 auto; padding:22px;}
@@ -139,12 +139,7 @@
     /* ===== Autocomplete / Catalog ===== */
     .input-with-btn{ display:flex; gap:8px; align-items:center; }
     .btn.mini{ padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; }
-        /* Fix: prevent "찾기" from stacking vertically on narrow widths */
-    .btn.mini{ white-space: nowrap; min-width: 64px; flex: 0 0 auto; padding: 8px 14px; }
-    .input-with-btn{ flex-wrap: nowrap; }
-    .input-with-btn input{ flex: 1 1 auto; min-width: 0; }
-
-.code-help{ margin-top:6px; color: var(--muted); font-size:12px; line-height:1.35; }
+    .code-help{ margin-top:6px; color: var(--muted); font-size:12px; line-height:1.35; }
 
     /* Modal */
     .modal-overlay{
@@ -220,6 +215,41 @@
     }
     .catalog-table tr:hover td{ background: rgba(7,112,227,.04); cursor:pointer; }
 
+
+    /* ===== Advanced settings (Top N / Limit) ===== */
+    details.advanced{
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.9);
+      box-shadow: var(--shadow-sm);
+    }
+    details.advanced summary{
+      cursor: pointer;
+      font-weight: 900;
+      color: var(--ink);
+      user-select: none;
+      list-style: none;
+      outline: none;
+    }
+    details.advanced summary::-webkit-details-marker{ display:none; }
+    details.advanced summary::after{
+      content: "▾";
+      float: right;
+      color: var(--muted);
+      font-weight: 900;
+      transform: translateY(-1px);
+    }
+    details.advanced[open] summary::after{ content:"▴"; }
+    .advanced-grid{ margin-top: 12px; }
+    .advanced-grid .hint{
+      grid-column: 1 / -1;
+      font-size: 12px;
+      line-height: 1.4;
+      opacity: .9;
+      padding-top: 2px;
+    }
 </style>
 </head>
 <body>
@@ -338,18 +368,12 @@
           <legend>여행기간 입력</legend>
           <div class="grid4">
             <label>체크인
-              <input name="checkin" value="{{ checkin }}">
+              <input type="date" name="checkin" value="{{ checkin }}" required>
             </label>
             <label>체크아웃
-              <input name="checkout" value="{{ checkout }}">
+              <input type="date" name="checkout" value="{{ checkout }}" required>
             </label>
-            <label>Top N
-              <input name="top_n" value="{{ top_n }}">
-            </label>
-            <label>Limit
-              <input name="limit" value="{{ limit }}">
-            </label>
-          </div>
+</div>
         </fieldset>
 
 
@@ -361,6 +385,24 @@
             <label>숙박일수(박) <input name="nights" value="{{ nights }}" size="3"></label>
           </div>
         </fieldset>
+
+
+        <details class="advanced">
+          <summary>고급 설정 (표시/검색 개수)</summary>
+          <div class="grid3 advanced-grid">
+            <label>표시 개수 (Top N)
+              <input name="top_n" value="{{ top_n }}" inputmode="numeric">
+            </label>
+            <label>검색 개수 (Limit)
+              <input name="limit" value="{{ limit }}" inputmode="numeric">
+            </label>
+            <div class="hint muted">
+              Top N은 화면에 보여줄 결과 개수, Limit은 API에서 가져올 후보(검색) 개수입니다.
+            </div>
+          </div>
+        </details>
+
+
 
         <fieldset id="fs-flight">
           <legend>항공 설정 (항공+호텔 모드에서 사용)</legend>
@@ -416,7 +458,7 @@
         <h2 class="section-title">호텔 최저가 (여행기간) 결과</h2>
         <table>
           <tr>
-            <th>No</th><th>호텔 이름</th><th>평점</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
+            <th>No</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
           </tr>
           {% for r in period_rows %}
           <tr>
@@ -486,7 +528,7 @@
           <h3>② 동일 기간 호텔 TOP {{ fh_hotels|length }}</h3>
           <table>
             <tr>
-              <th>Rank</th><th>호텔 이름</th><th>평점</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
+              <th>Rank</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
             </tr>
             {% for h in fh_hotels %}
             <tr>
@@ -536,7 +578,7 @@
           <h3>② 해당 일정 기준 호텔 TOP {{ fh_hotels|length }}</h3>
           <table>
             <tr>
-              <th>Rank</th><th>호텔 이름</th><th>평점</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
+              <th>Rank</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
             </tr>
             {% for h in fh_hotels %}
             <tr>
@@ -925,6 +967,27 @@
       });
     });
 </script>
+
+<script>
+  // Keep checkout >= checkin for better UX
+  function syncCheckoutMin(){
+    const ci = document.querySelector('input[name="checkin"]');
+    const co = document.querySelector('input[name="checkout"]');
+    if(!ci || !co) return;
+    if(ci.value) co.min = ci.value;
+    if(ci.value && co.value && co.value < ci.value){
+      co.value = ci.value;
+    }
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    syncCheckoutMin();
+    const ci = document.querySelector('input[name="checkin"]');
+    const co = document.querySelector('input[name="checkout"]');
+    if(ci) ci.addEventListener("change", syncCheckoutMin);
+    if(co) co.addEventListener("change", syncCheckoutMin);
+  });
+</script>
+
 </body>
 </html>
 
