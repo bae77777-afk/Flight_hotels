@@ -9,8 +9,8 @@
 :root{
   /* Surface */
   --bg: #f3f6fb;
-  --bg2:#eef3fb;
-  --card:#ffffff;
+  --bg2:#92bdfad3;
+  --card:#92bdfad3;
   --card2:#f7faff;
 
   /* Text */
@@ -266,7 +266,7 @@ img{ max-width:100%; display:block; }
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 12px;
-  background: #fff;
+  background: var(--card);
 }
 .kpi-num{ font-weight: 950; margin-bottom: 4px; }
 .kpi-label{ color: var(--muted); font-size: 12px; line-height: 1.35; }
@@ -302,7 +302,7 @@ img{ max-width:100%; display:block; }
   border-radius: 16px;
   padding: 14px;
   margin: 12px 0;
-  background: rgba(255,255,255,.94);
+  background: var(--card);
 }
 .form legend{
   padding: 0 8px;
@@ -389,7 +389,7 @@ img{ max-width:100%; display:block; }
   overflow:auto;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
   box-shadow: var(--shadow2);
 }
 
@@ -444,3 +444,20 @@ td.num{
   table{ min-width: 640px; }
   .hero h1{ font-size: 34px; }
 }
+
+/* ✅ travel submit button: 항상 대비가 나오게 */
+.form button[type="submit"]{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,98,227,.35);
+  background: linear-gradient(180deg, #0a6cff, #0057d6);
+  color: #ffffff !important;
+  font-weight: 900;
+  box-shadow: var(--shadow2);
+  cursor: pointer;
+}
+.form button[type="submit"]:hover{ filter: brightness(.99); }
+.form button[type="submit"]:active{ transform: translateY(1px); }
