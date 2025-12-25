@@ -177,6 +177,7 @@ def search_hotels_for_dates(
     currency: str = "KRW",
     nationality: str = "KR",
     adults: int = 2,   # ✅ 추가: 성인 수 반영
+    session: Optional[requests.Session] = None,
 ) -> List[HotelOption]:
     """Fetch hotels from LiteAPI and return them sorted by price."""
 
@@ -211,7 +212,8 @@ def search_hotels_for_dates(
 
     try:
         # connect 10초, read 60초
-        resp = requests.post(LITEAPI_URL, json=payload, headers=headers, timeout=(10, 60))
+        client = session or requests
+        resp = client.post(LITEAPI_URL, json=payload, headers=headers, timeout=(10, 60))
         resp.raise_for_status()
         data = resp.json()
     except requests.exceptions.Timeout:

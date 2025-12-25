@@ -55,7 +55,6 @@ def home():
 @app.get("/healthz")
 def healthz():
     return "ok", 200
-
 # -----------------------------
 # LiteAPI helpers (hotel period/month)
 # -----------------------------
@@ -170,7 +169,8 @@ def get_min_price_for_date_via_helper(
     currency: str,
     nationality: str,
     limit: int,
-    adults: int = 2,
+    adults: int,
+    session: requests.Session,
 ):
     checkout = checkin + timedelta(days=nights)
     hotels = search_hotels_for_dates(
@@ -178,12 +178,13 @@ def get_min_price_for_date_via_helper(
         checkout=checkout,
         city_name=city,
         country_code=country,
-        adults=adults,
         min_star=min_stars,
         max_star=max_stars,
         limit=limit,
         currency=currency,
         nationality=nationality,
+        adults=adults,
+        session=session,
     )
     if not hotels:
         return None
@@ -209,11 +210,16 @@ def find_cheapest_hotel_in_month(
     max_stars: int,
     currency: str,
     nationality: str,
-    adults: int,
     limit: int,
+    adults: int = 2,
 ):
     last_day = calendar.monthrange(year, month)[1]
     daily_results: List[Dict] = []
+
+    # 월 스캔은 호출이 '일수만큼' 누적되므로, 후보 호텔 수(limit)를 줄이면 체감 속도가 크게 개선됩니다.
+    limit_month = min(int(limit), 20)
+
+    session = requests.Session()
 
     for day in range(1, last_day + 1):
         checkin = date(year, month, day)
@@ -227,8 +233,9 @@ def find_cheapest_hotel_in_month(
                 max_stars=max_stars,
                 currency=currency,
                 nationality=nationality,
+                limit=limit_month,
                 adults=adults,
-                limit=limit,
+                session=session,
             )
         except Exception:
             continue
@@ -425,12 +432,12 @@ def travel():
                     checkout=checkout,
                     city_name=city,
                     country_code=country,
-                    adults=adults,  
                     min_star=min_stars,
                     max_star=max_stars,
                     limit=limit,
                     currency=currency,
                     nationality=guest_nat,
+                    adults=adults,
                 ) or []
                 fh_hotels = fh_hotels[:fh_top_n]
 
@@ -488,13 +495,13 @@ def travel():
                         checkout=co,
                         city_name=city,
                         country_code=country,
-                        adults=adults,
                         min_star=min_stars,
                         max_star=max_stars,
                         limit=limit,
                         currency=currency,
-                        nationality=guest_nat,
-                    ) or []
+                    nationality=guest_nat,
+                    adults=adults,
+                ) or []
                     fh_hotels = fh_hotels[:fh_top_n]
 
                     if fh_hotels:
@@ -550,6 +557,9 @@ def travel():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=True)
+
+
+
 
 
 
