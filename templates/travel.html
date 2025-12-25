@@ -416,7 +416,7 @@
         <h2 class="section-title">호텔 최저가 (여행기간) 결과</h2>
         <table>
           <tr>
-            <th>No</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
+            <th>No</th><th>호텔 이름</th><th>평점</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
           </tr>
           {% for r in period_rows %}
           <tr>
@@ -486,7 +486,7 @@
           <h3>② 동일 기간 호텔 TOP {{ fh_hotels|length }}</h3>
           <table>
             <tr>
-              <th>Rank</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
+              <th>Rank</th><th>호텔 이름</th><th>평점</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
             </tr>
             {% for h in fh_hotels %}
             <tr>
@@ -536,7 +536,7 @@
           <h3>② 해당 일정 기준 호텔 TOP {{ fh_hotels|length }}</h3>
           <table>
             <tr>
-              <th>Rank</th><th>호텔 이름</th><th>성급</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
+              <th>Rank</th><th>호텔 이름</th><th>평점</th><th class="right">총액</th><th>통화</th><th>환불</th><th>주소</th>
             </tr>
             {% for h in fh_hotels %}
             <tr>
