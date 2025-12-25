@@ -170,6 +170,7 @@ def get_min_price_for_date_via_helper(
     currency: str,
     nationality: str,
     limit: int,
+    adults: int,
 ):
     checkout = checkin + timedelta(days=nights)
     hotels = search_hotels_for_dates(
@@ -177,6 +178,7 @@ def get_min_price_for_date_via_helper(
         checkout=checkout,
         city_name=city,
         country_code=country,
+        adults=adults,
         min_star=min_stars,
         max_star=max_stars,
         limit=limit,
@@ -207,6 +209,7 @@ def find_cheapest_hotel_in_month(
     max_stars: int,
     currency: str,
     nationality: str,
+    adults: int,
     limit: int,
 ):
     last_day = calendar.monthrange(year, month)[1]
@@ -224,6 +227,7 @@ def find_cheapest_hotel_in_month(
                 max_stars=max_stars,
                 currency=currency,
                 nationality=nationality,
+                adults=adults,
                 limit=limit,
             )
         except Exception:
@@ -483,6 +487,7 @@ def travel():
                         checkout=co,
                         city_name=city,
                         country_code=country,
+                        adults=adults,
                         min_star=min_stars,
                         max_star=max_stars,
                         limit=limit,
