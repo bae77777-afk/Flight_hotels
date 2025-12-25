@@ -139,7 +139,12 @@
     /* ===== Autocomplete / Catalog ===== */
     .input-with-btn{ display:flex; gap:8px; align-items:center; }
     .btn.mini{ padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; }
-    .code-help{ margin-top:6px; color: var(--muted); font-size:12px; line-height:1.35; }
+        /* Fix: prevent "찾기" from stacking vertically on narrow widths */
+    .btn.mini{ white-space: nowrap; min-width: 64px; flex: 0 0 auto; padding: 8px 14px; }
+    .input-with-btn{ flex-wrap: nowrap; }
+    .input-with-btn input{ flex: 1 1 auto; min-width: 0; }
+
+.code-help{ margin-top:6px; color: var(--muted); font-size:12px; line-height:1.35; }
 
     /* Modal */
     .modal-overlay{
@@ -329,7 +334,7 @@
           </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset id="fs-period">
           <legend>여행기간 입력</legend>
           <div class="grid4">
             <label>체크인
