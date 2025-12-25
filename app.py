@@ -52,6 +52,9 @@ def _gatekeeper():
 def home():
     return render_template("index.html", title="소개")
 
+@app.get("/healthz")
+def healthz():
+    return "ok", 200
 
 # -----------------------------
 # LiteAPI helpers (hotel period/month)

@@ -1,0 +1,16 @@
+name: keepalive-render
+
+on:
+  schedule:
+    # 정각(00분)은 큐 밀려서 지연이 종종 있어 2분 오프셋 추천
+    - cron: "2-59/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping hoongora.me
+        run: |
+          set -e
+          curl -fsSL --max-time 20 --retry 3 --retry-delay 5 "https://hoongora.me/healthz" > /dev/null
