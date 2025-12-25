@@ -267,7 +267,7 @@
           </div>
           <div class="kpi">
             <div class="kpi-num">프로젝트</div>
-            <div class="kpi-label">만들어온/만들어갈 것</div>
+            <div class="kpi-label">만들어온, 만들어갈 것</div>
           </div>
           <div class="kpi">
             <div class="kpi-num">Contact</div>
@@ -441,11 +441,16 @@
             {{ hotel_cheapest.hotelName }} - {{ hotel_cheapest.price }} {{ hotel_cheapest.currency }}
           </p>
         {% endif %}
+        <details class="details" style="margin-top:10px;">
+          <summary style="cursor:pointer; font-weight:800;">
+            일별 최저가 TOP 10 보기 (총 {{ monthly_results|length }}일)
+          </summary>
+          <div style="margin-top:10px; overflow:auto;">
         <table>
           <tr>
             <th>No</th><th>Checkin</th><th>Checkout</th><th>호텔</th><th class="right">Price</th><th>통화</th>
           </tr>
-          {% for r in monthly_results %}
+          {% for r in monthly_results[:10] %}
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ r.checkin }}</td>
@@ -456,6 +461,8 @@
           </tr>
           {% endfor %}
         </table>
+          </div>
+        </details>
       {% endif %}
 
       <!-- ✅ 결과: 항공+호텔(여행기간) -->
