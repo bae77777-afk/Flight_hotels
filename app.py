@@ -170,7 +170,7 @@ def get_min_price_for_date_via_helper(
     currency: str,
     nationality: str,
     limit: int,
-    adults: int,
+    adults: int = 2,
 ):
     checkout = checkin + timedelta(days=nights)
     hotels = search_hotels_for_dates(
@@ -401,6 +401,7 @@ def travel():
                     currency=currency,
                     nationality=guest_nat,
                     limit=limit,
+                    adults=adults,
                 )
 
             elif mode == "flight_hotel_period":
