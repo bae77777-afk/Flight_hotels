@@ -479,3 +479,56 @@ td.num{
 }
 .form button[type="submit"]:hover{ filter: brightness(1.02); }
 .form button[type="submit"]:active{ transform: translateY(1px); }
+
+
+
+/* =========================
+   Border visibility upgrade (2) + Card top accent (3)
+   ========================= */
+
+/* (2) Emphasize key containers without making the whole UI heavy */
+.form fieldset,
+.table-wrap{
+  border-color: var(--line2);
+}
+
+.tabs,
+.badge{
+  border-color: var(--line2);
+}
+
+/* Slightly stronger row separators in tables */
+th, td{
+  border-bottom-color: var(--line2);
+}
+
+/* Make hover state a bit clearer */
+.card:hover{
+  border-color: rgba(7,112,227,.26);
+}
+
+/* (3) Subtle top accent line on cards (Skyscanner / Trip-like) */
+.card{
+  position: relative;
+  overflow: hidden; /* keeps the top rail clean on rounded corners */
+}
+
+.card::before{
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(7,112,227,.20);
+  pointer-events: none;
+}
+
+.card.soft::before{
+  background: rgba(7,112,227,.16);
+}
+
+/* Optional: don't show rail on specific cards */
+.card.no-rail::before{ display:none; }
+
