@@ -10,11 +10,12 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping hoongora.me (with timing)
+      - name: Ping (with timing)
         run: |
           set -e
           echo "UTC now: $(date -u +'%F %T')"
-          curl -sS -o /dev/null \
+          curl -sS -L -o /dev/null \
             -w "http=%{http_code} dns=%{time_namelookup} connect=%{time_connect} tls=%{time_appconnect} ttfb=%{time_starttransfer} total=%{time_total}\n" \
-            --max-time 20 --retry 3 --retry-delay 5 \
-            "https://hoongora.me/healthz"
+            --max-time 90 --retry 3 --retry-delay 10 \
+            "https://<너서비스>.onrender.com/healthz"
+
